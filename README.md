@@ -1,7 +1,6 @@
 # Bhuvan Dubey — Data Science & Analytics Portfolio
 
-MSc Data Science and Analytics (Business Analytics), University of Calgary — graduating August 2026.
-Background in Exercise & Health Physiology (First Class Honours, 2025) before moving into data science.
+Master of Data Science and Analytics (MDSA) (Business Analytics), University of Calgary (August 2026).
 
 This repo collects course and applied projects from the MDSA program: problem framing, modeling approach, and results for each, with code included.
 

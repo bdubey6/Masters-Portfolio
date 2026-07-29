@@ -1,0 +1,266 @@
+---
+title: "Data 602 - Assignment Four, Part II"
+output: html_notebook
+date: "Due October 8, 2025 @ 11:59pm"
+---
+
+Attempt all problems below. You will be required to complete this assignment in R Notebook or R Markdown. Convert your work to a .pdf file and submit to Assignment 4 Part 2 submission link provided in the folder.
+</br>
+</br>
+Ensure you justify all computation and data visualizations with accompanying code. 
+</br>
+</br>
+
+**1.(23 marks)** The Capital Asset Price Model (CAPM) is a financial model that attempts to predict the 
+rate of return on a financial instrument, such as a common stock, in such a way that it is
+linearly related to the rate of return on the overal market. Specifically
+
+$$
+R_{Suncor,i} = \beta_{0} + \beta_{1}R_{TSSE, i} + e_{i}   
+$$
+
+(Note: To align the notation with a stock's ``beta'', $\beta_{0} = A$ and $\beta_{1} = B$)
+
+
+You are to study the relationship between the two variables and estimate the above model:
+
+$R_{SUNCOR, i}$ - rate of return on Stock A for month $i$, $i = 1, 2, \cdots, 59$.
+
+$R_{TSE, i}$ - Monthly Rate of Return on the TSE $i$, $i = 1, 2, \cdots, 59$.
+
+
+$\beta_{1}$ represents the stocks `beta' value, or its *systematic risk*. It measure's the stocks volatility related
+to the market volatility.  $\beta_{0}$ represents the risk-free interest rate.
+
+The data appearing in the [file](https://github.com/Statman44/Data602/blob/main/capm.csv) contains the data on Suncor's rate of return and the Toronto Composite Index rate of return for 59 randomly selected months.  
+
+Therefore $R_{SUNCOR, i}$ represents the monthly rate of return for a common share of Suncor stock; 
+$R_{TSE, i}$ represents the monthly rate of return (increase or decrease) of the TSE Index for the same month, month $i$.
+The first column in this data file contains the monthly rate of return on Suncor stock; the second column contains the monthly rate of return on the TSE index for the *same month*. 
+
+Read this data into R Studio and answer the questions posed below. 
+```{r}
+capmdata.df = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/capm.csv")
+capmdata.df
+```
+
+
+(a) Appropriately visualize these data. What can you infer from this visualization? Provide a brief commentary.
+```{r}
+ggplot(capmdata.df, aes(x = TSE.Index, y = Suncor)) + geom_point(col="blue", size = 2) + geom_smooth(method = "lm", se = TRUE, color = "red") + labs(title = "Suncor monthly return vs TSE monthly return",  x = "TSE monthly return", y = "Suncor monthly return")
+```
+The scatter points shows some dispersion, which means that while the relationship exists, it’s not perfectly tight. The regression line shows a positive linear trend, suggesting that as TSE returns increase, Suncor returns also increases.So a moderate positive linear relationship exists between Suncor and the TSE Index returns.
+
+
+(b) Estimate the model above.  
+```{r}
+predictcapm = lm(Suncor ~ TSE.Index, data = capmdata.df)
+options(scipen = 999)
+predictcapm$coef
+```
+
+(c) In the context of these data, interpret the meaning of your estimates of the estimates $\widehat{\beta}_{0}$ and $\widehat{\beta}_{1}$, in the context of these data.
+```{r}
+coef(summary(predictcapm))
+```
+
+Risk-free rate (β0 = 0.01665):	When the TSE has 0% return, Suncor is expected to earn ~1.66% monthly return on average.
+Systematic risk (β1 = 0.5387):	For every 1% increase in TSE monthly return, Suncor’s return increases by approximately 0.54%. Suncor is less volatile than the market (since β < 1).
+
+(d) Refer to your answer in (b) In a certain month, the rate of return on the TSE Index was 4%. Predict the rate of return on Suncor stock for the same month. 
+```{r}
+predict(predictcapm, data.frame(TSE.Index = 0.04))
+```
+Expected Suncor return is 3.82% when TSEindex is 4%.
+
+(e) Think about the conditions of this model *in the context* of these data. Create the visualizations that inspect each of the two conditions and provide commentary that addresses the validity (or invalidity) of each. 
+```{r}
+# Normal Probability Plot of Standardized Residuals
+ggplot(capmdata.df, aes(sample = rstandard(predictcapm))) + stat_qq(col = "blue") + stat_qqline(col = "red") + ggtitle("Normal Probability Plot of Standardized Residuals")
+
+# Residuals vs Fitted Values
+ggplot(data.frame(fitted = predictcapm$fitted.values, resid = predictcapm$residuals),  aes(x = fitted, y = resid)) + geom_point(size = 2, col = "blue", position = "jitter") + geom_hline(yintercept = 0, col = "red", linetype = "dashed") + xlab("Fitted Values") + ylab("Residuals") + ggtitle("Residual Plot – Checking Homoscedasticity")
+```
+
+The plots show that model assumptions are satisfied/valid. Residuals appear approximately normal, and the spread of residuals across fitted values shows no strong pattern (homoscedasticity). Thus, the linear regression assumptions are met.
+
+
+(f) From these data, can you infer that the monthly rate of return of Suncor stock can be expressed as a positive linear function of the monthly rate of return of the TSE Index? State your statistical hypotheses, compute (and report) both the test statistic and the $P$-value and provide your decision. 
+H0: β1 = 0 (no linear relationship)
+
+H1: β1 > 0 (positive linear relationship)
+
+```{r}
+summary(predictcapm)
+```
+The estimated slope is β1 = 0.5387 with a standard error of 0.1918, giving a t-statistic of t = 2.809. The corresponding one-tailed p-value is 0.0068. Since the p-value is less than the significance level of 0.05, we reject the null hypothesis and conclude that there is significant evidence that the monthly return of Suncor stock can be expressed as a positive linear function of the monthly return of the TSE Index.
+
+
+
+(g) Compute a 95% confidence interval for $\beta_{1}$, then interpret its meaning in the context of these data. 
+```{r}
+confint(predictcapm, "TSE.Index", level = 0.95)
+```
+We are 95% confident that for each 1% increase in TSE return, Suncor’s return increases between 0.15% and 0.92%. The CI does not include 0 so it confirms a positive relationship.
+
+
+(h) Compute a 95% confidence interval for the mean monthly rate of return of Suncor stock when the TSE has a monthly rate of return of 3%. 
+```{r}
+predict(predictcapm, newdata = data.frame(TSE.Index = 0.03), interval = "confidence", level = 0.95)
+```
+When the TSE monthly return is 3%, the mean Suncor return is expected to be between 0.76% and 5.80% with 95% confidence
+
+
+(i) In a month of September, the TSE Index had a rate of return of 1.16%. With 95% confidence, compute the September rate of return for Suncor stock. 
+```{r}
+predict(predictcapm, newdata = data.frame(TSE.Index = 0.0116), interval = "prediction", level = 0.95)
+```
+For a single month when TSE = 1.16%, the Suncor return is predicted to be between -15.9% and +20.5%.
+
+
+(j) Recall the Bootstrap Method. From these data, use the bootstrap method to create a 95% confidence interval for mean monthly rate of return of Suncor stock when the TSE has a monthly rate of return of 3%. Compare your result to your result in part (h). Use 1000 iterations for your bootstrap. *Carefully* consider how you would resample bivariate data points $(x_{TSE, i}, y_{Suncor, i})$. 
+```{r}
+B <- 1000
+boot_estimates <- numeric(B)
+
+for (i in 1:B) {
+  boot_data <- capmdata.df[sample(1:nrow(capmdata.df), replace = TRUE), ]
+  boot_model <- lm(Suncor ~ TSE.Index, data = boot_data)
+  boot_estimates[i] <- predict(boot_model, newdata = data.frame(TSE.Index = 0.03))
+}
+quantile(boot_estimates, c(0.025, 0.975))
+```
+
+
+</br>
+</br>
+
+**2.(11 marks)** Was Barry Bonds using Steroids? During the 2001 Season, Barry Bonds hit a major league record of 73 home runs.
+</br>
+</br>
+The following bivariate data set gives the season and the number of home runs divided by the number of at bats - attempts to hit the ball - for each season. The number of home runs is not used as later in his career he was given intentional walks, which do not count as an at bat. Note that he had 476 at bats in the 2001 Season 
+
+In this exercise, you will build on your learning of model building and attempt to **predict the number of home runs Barry Bonds would have hit in the 2001** season. These data are stored in the 
+[data file](https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/bondsdata.csv).
+
+
+Remove the data point that corresponds to the **season == 2001**. After which, you are attempting to build a statistical model of the following form:
+$$
+HRAT_{i} = A + B*Season_{i} + e_{i} \hspace{0.5in} i = 1987, 1988, \cdots, 2002.
+$$
+Carry out the appropriate statistical analysis to justify your answer. Communicate your answer in the form of a few paragraphs. In writing your response and statistical justification, ensure that any conditions/assumptions of the model stated above are mentioned and checked. 
+```{r}
+bonds = read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/bondsdata.csv")
+bonds
+```
+```{r}
+# Remove 2001 season
+bonds_no2001 = bonds %>% filter(season != 2001)
+
+# Scatterplot: HR per at-bat vs Season
+ggplot(bonds_no2001, aes(x = season, y = hrat)) + geom_point(color = "blue", size = 2) + geom_smooth(method = "lm", color = "red") + xlab("Season") + ylab("Home Runs per At Bat (HRAT)") + ggtitle("Barry Bonds: HR Rate vs Season (without 2001)")
+```
+The scatterplot shows a clear upward trend over time. 
+
+```{r}
+# Correlation (Season and HR rate)
+cor(bonds_no2001$season, bonds_no2001$hrat)
+```
+Strong positive linear relationship between season and HR rate. This suggests that Barry Bonds’ HR rate increased steadily over time. 
+```{r}
+# Fit probabilistic model HRAT ~ Season
+model = lm(hrat ~ season, data = bonds_no2001)
+summary(model)
+
+# coefficients
+options(scipen=999)
+model$coef
+```
+The p-values << 0.001 → the trend is statistically significant. The adjusted r squared value is 0.69, so about 69% of the variation in HR rate is explained by the season.
+
+
+```{r}
+# Residuals vs fitted values (homoscedasticity)
+plot(model, which = 1)
+
+# QQ-plot (normality of residuals)
+plot(model, which = 2)
+
+# Standardized residuals
+rstandard(model)
+```
+The model assumptions are reasonable based on residuals plot and QQ-plot.
+
+```{r}
+# Predict HR rate for 2001 season
+predict_2001 = predict(model, newdata = data.frame(season = 2001), interval = "prediction")
+predict_2001
+
+# Multiply by actual at-bats to get expected HRs
+at_bats_2001 = 476
+expected_HR_2001 = predict_2001 * at_bats_2001
+expected_HR_2001
+```
+The model predicts 49 HRs for 2001, with an upper 95% prediction limit of 64 HRs.
+
+The actual 73 HRs far exceed what would be expected based on past trends. 2001 was an outlier. There is a strong, positive, linear trend in Bonds’ HR rate over his career prior to 2001. However, this does not prove steroid use, it shows his performance was significantly higher than predicted by historical data.
+
+</br>
+</br>
+</br>
+**3.(6 marks)** Researchers studying penguin populations in the Palmer Archipelago collected data on three species: Adélie, Chinstrap, and Gentoo.
+
+Conservationists argue that because these penguins share a similar environment, their population should be equally distributed across the three species.
+
+Using the 2007 survey data from the dataset penguins in the palmerpenguins package in R, test whether the three species are equally likely to occur in the population at the $\alpha$ = 0.05
+
+Follow the steps below to access the data and perform the test:
+
+Step 1. Install and load the palmerpenguins package
+```{r}
+install.packages("palmerpenguins")
+library(palmerpenguins)
+```
+
+
+Step 2. Call the dataset: penguins
+```{r}
+data(penguins)
+head(penguins)
+```
+
+
+Step 3. Use the species variable to test whether the three species are equally distributed
+
+(a) State the appropriate statistical hypothesis.
+Null hypothesis: The three penguin species are equally likely in the population. 
+Alternative hypothesis: The three penguin species are not equally likely in the population.
+
+(b) If their population is equally distributed across the three species, what the expected count for each specie should be?
+```{r}
+# Remove missing species observations
+species_counts = table(penguins$species)
+species_counts
+N = sum(species_counts) # Total number of observed penguins
+k = length(species_counts) # Number of species
+expected_counts = rep(N / k, k) # Expected counts (equally likely)
+expected_counts
+```
+
+If the population is equally distributed among the three species, the expected count for each species is about 115. 
+
+(c) Compute the test statistic and derive the probability expression from which the $P$-value is computed, then compute the $P$-value.
+```{r}
+# Chi-square test statistic
+chisq_test = chisq.test(species_counts, p = c(1/3, 1/3, 1/3))
+chisq_test
+```
+
+(d) What can you conclude from these data? 
+Since P<alpha=0.05, we reject the null hypothesis. There is strong evidence that the three penguin species are not equally distributed in the Palmer Archipelago population in 2007. Specifically, Adelie and Gentoo are more common, while Chinstrap penguins are less common than expected under equal distribution.
+
+</br>
+</br>
+</br>
+</br>
+***Congratulations on completing all assignments. Good luck with the final exam!***

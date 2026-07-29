@@ -1,0 +1,274 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+
+```{r}
+library(dplyr)
+
+# Load dataset
+df <- read.csv("../data/Current_Year_Property_Assessments_(Parcel).csv",
+               stringsAsFactors = FALSE)
+
+# --- 1. Fix ASSESSED_VALUE column ---
+# Remove commas and convert to numeric
+df$ASSESSED_VALUE <- as.numeric(gsub(",", "", df$ASSESSED_VALUE))
+
+# --- 2. Clean data ---
+df_clean <- df %>%
+  filter(!is.na(COMM_NAME),
+         !is.na(ASSESSED_VALUE),
+         ASSESSED_VALUE > 0)
+
+# --- 3. Community-level summary ---
+community_stats <- df_clean %>%
+  group_by(COMM_NAME) %>%
+  summarise(
+    n_parcels = n(),
+    avg_assessed_value = mean(ASSESSED_VALUE, na.rm = TRUE),
+    median_assessed_value = median(ASSESSED_VALUE, na.rm = TRUE),
+    sd_assessed_value = sd(ASSESSED_VALUE, na.rm = TRUE),
+    iqr_assessed_value = IQR(ASSESSED_VALUE, na.rm = TRUE)
+  ) %>%
+  arrange(desc(avg_assessed_value))
+
+# --- 4. Top communities by highest average assessed value ---
+top_avg <- community_stats %>%
+  slice_max(order_by = avg_assessed_value, n = 10)
+
+print("Top 10 Communities by Highest Average Assessed Value:")
+print(top_avg)
+
+# --- 5. Top communities by greatest dispersion ---
+top_dispersion <- community_stats %>%
+  slice_max(order_by = sd_assessed_value, n = 10)
+
+print("Top 10 Communities by Highest Dispersion (SD) in Assessed Value:")
+print(top_dispersion)
+
+
+```
+
+```{r}
+# Load packages
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(knitr)
+library(kableExtra)
+
+# ------------------------------------------------------------
+# 1. Load and Clean Data
+# ------------------------------------------------------------
+
+df <- read.csv("../data/Current_Year_Property_Assessments_(Parcel).csv",
+               stringsAsFactors = FALSE)
+
+# Fix assessed value (remove commas and convert to numeric)
+df$ASSESSED_VALUE <- as.numeric(gsub(",", "", df$ASSESSED_VALUE))
+
+# Filter out missing or invalid values
+df_clean <- df %>%
+  filter(!is.na(COMM_NAME),
+         !is.na(ASSESSED_VALUE),
+         ASSESSED_VALUE > 0)
+
+# ------------------------------------------------------------
+# 2. Compute Community-Level Statistics
+# ------------------------------------------------------------
+
+community_stats <- df_clean %>%
+  group_by(COMM_NAME) %>%
+  summarise(
+    n_parcels = n(),
+    avg_assessed_value = mean(ASSESSED_VALUE, na.rm = TRUE),
+    median_assessed_value = median(ASSESSED_VALUE, na.rm = TRUE),
+    sd_assessed_value = sd(ASSESSED_VALUE, na.rm = TRUE),
+    iqr_assessed_value = IQR(ASSESSED_VALUE, na.rm = TRUE)
+  ) %>%
+  arrange(desc(avg_assessed_value))
+
+# ------------------------------------------------------------
+# 3. Top Communities (Tables)
+# ------------------------------------------------------------
+
+top_avg <- community_stats %>%
+  slice_max(order_by = avg_assessed_value, n = 10)
+
+top_dispersion <- community_stats %>%
+  slice_max(order_by = sd_assessed_value, n = 10)
+
+# Display nicely formatted tables
+kable(top_avg, caption = "Top 10 Communities by Highest Average Assessed Value") %>%
+  kable_styling(full_width = FALSE)
+
+kable(top_dispersion, caption = "Top 10 Communities by Greatest Dispersion (Standard Deviation)") %>%
+  kable_styling(full_width = FALSE)
+
+# ------------------------------------------------------------
+# 4. Visualization - Highest Average Assessed Values
+# ------------------------------------------------------------
+
+ggplot(top_avg, aes(x = reorder(COMM_NAME, avg_assessed_value),
+                    y = avg_assessed_value)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 10 Communities by Highest Average Assessed Value",
+       x = "Community",
+       y = "Average Assessed Value") +
+  theme_minimal()
+
+# ------------------------------------------------------------
+# 5. Visualization - Highest Dispersion (SD)
+# ------------------------------------------------------------
+
+ggplot(top_dispersion, aes(x = reorder(COMM_NAME, sd_assessed_value),
+                           y = sd_assessed_value)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 10 Communities by Greatest Dispersion in Assessed \nValue (SD)",
+       x = "Community",
+       y = "Standard Deviation of Assessed Value") +
+  theme_minimal() +
+  theme(plot.margin = margin(20, 20, 20, 20))
+
+
+# ------------------------------------------------------------
+# 6. Optional: Export results
+# ------------------------------------------------------------
+
+write.csv(community_stats,
+          "community_assessment_statistics.csv",
+          row.names = FALSE)
+
+```
+
+
+
+```{r}
+# ------------------------------------------------------------
+# Load Packages
+# ------------------------------------------------------------
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(broom)
+
+# ------------------------------------------------------------
+# 1. Load & Clean Data
+# ------------------------------------------------------------
+
+df <- read.csv(
+  "../data/Current_Year_Property_Assessments_(Parcel).csv",
+  stringsAsFactors = FALSE
+)
+
+# Clean numeric fields
+df$ASSESSED_VALUE <- as.numeric(gsub(",", "", df$ASSESSED_VALUE))
+df$LAND_SIZE_SM   <- as.numeric(gsub(",", "", df$LAND_SIZE_SM))
+
+# Basic filtering
+df_clean <- df %>%
+  filter(
+    !is.na(COMM_NAME),
+    !is.na(ASSESSED_VALUE),
+    ASSESSED_VALUE > 0
+  )
+
+# ------------------------------------------------------------
+# 2. Create Community-Level Variables
+# ------------------------------------------------------------
+
+community_vars <- df_clean %>%
+  group_by(COMM_NAME) %>%
+  summarise(
+    comm_avg_lot_size = mean(LAND_SIZE_SM, na.rm = TRUE),
+    comm_median_value = median(ASSESSED_VALUE, na.rm = TRUE),
+    
+    # proportions of property types
+    prop_residential   = mean(PROPERTY_TYPE == "RESIDENTIAL",   na.rm = TRUE),
+    prop_commercial    = mean(PROPERTY_TYPE == "COMMERCIAL",    na.rm = TRUE),
+    prop_institutional = mean(PROPERTY_TYPE == "INSTITUTIONAL", na.rm = TRUE)
+  )
+
+# ------------------------------------------------------------
+# 3. Merge Community Variables Back Onto Parcel-Level Data
+# ------------------------------------------------------------
+
+df_model <- df_clean %>%
+  left_join(community_vars, by = "COMM_NAME")
+
+# ------------------------------------------------------------
+# 4. Identify & Remove Predictors with Zero Variance
+# ------------------------------------------------------------
+
+predictor_cols <- c("comm_avg_lot_size",
+                    "comm_median_value",
+                    "prop_residential",
+                    "prop_commercial",
+                    "prop_institutional")
+
+zero_var_cols <- sapply(
+  df_model[, predictor_cols],
+  function(x) length(unique(x[!is.na(x)])) < 2
+)
+
+zero_var_cols   # will show TRUE/FALSE for each predictor
+
+# Keep only valid predictors
+valid_predictors <- names(zero_var_cols)[!zero_var_cols]
+
+# Build formula dynamically
+formula <- as.formula(
+  paste("ASSESSED_VALUE ~ LAND_SIZE_SM +", 
+        paste(valid_predictors, collapse = " + "))
+)
+
+# ------------------------------------------------------------
+# 5. Fit Regression Model
+# ------------------------------------------------------------
+
+model <- lm(formula, data = df_model)
+summary(model)
+
+# ------------------------------------------------------------
+# 6. Table of Regression Coefficients
+# ------------------------------------------------------------
+
+model_table <- tidy(model) %>%
+  mutate(across(estimate:p.value, ~ round(.x, 4)))
+
+kable(model_table,
+      caption = "Regression Results: Predicting Assessed Value from Parcel and Community Characteristics") %>%
+  kable_styling(full_width = FALSE)
+
+# ------------------------------------------------------------
+# 7. Residual Plot
+# ------------------------------------------------------------
+
+ggplot(data.frame(fitted = fitted(model), resid = resid(model)),
+       aes(x = fitted, y = resid)) +
+  geom_point(alpha = 0.4) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Residual Plot",
+       x = "Fitted Values",
+       y = "Residuals") +
+  theme_minimal()
+
+```
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

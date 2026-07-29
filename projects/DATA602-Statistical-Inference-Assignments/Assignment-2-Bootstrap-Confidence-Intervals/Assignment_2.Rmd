@@ -1,0 +1,531 @@
+---
+title: "Data 602 - Assignment Two"
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "Due September 21, 2025 @ 11:59pm"
+---
+
+Attempt all problems below. You will be required to complete this assignment in R Notebook or R Markdown, and submit a .pdf file into Gradescope. 
+</br>
+</br>
+Ensure you justify all computation and data visualizations with accompanying code.
+</br>
+</br>
+
+[Total marks: 58]
+
+**1.(2 marks)** Refer to Question 11 from Assignment 1: 
+
+(a) Compute the probability that another random sample of the same size will produce a sample mean that is at least the same value as the value of $\overline{X}$ you observed in Question 11 of Assignment 1. 
+```{r}
+# Sample mean and SD from question 1
+delivery_time= c(3.03, 6.33, 6.5, 5.22, 3.56, 6.76, 7.98, 4.82, 7.96, 4.54, 5.09, 6.46)
+n= length(delivery_time)
+x_bar = mean(delivery_time)
+s = sd(delivery_time)
+
+# Probability for sample mean >= observed x_bar
+mu = 5       # population mean
+sigma = 1.5  # population sd
+
+z_score = (x_bar - mu) / (sigma / sqrt(n))
+p_value = 1 - pnorm(z_score)
+
+n
+x_bar
+s
+z_score
+p_value
+```
+There’s about a 5.62% chance that another random sample of size 12 will have a mean ≥ 5.69 hours.
+
+(b) Refer to the value of the sample standard deviation $S$ (which you computed in Exercise 11 of Assignment 1): Compute the probability that another random sample (again, of the same size) will yield a sample standard deviation that is between 0.25 hour and 0.75 hour. Give at least 4 decimal places for your answer.
+```{r}
+df = n - 1
+
+lower = (df * (0.25^2)) / (sigma^2)
+upper = (df * (0.75^2)) / (sigma^2)
+
+p = pchisq(upper, df) - pchisq(lower, df)
+
+lower
+upper
+p
+```
+
+</br>
+</br>
+
+**2.(7 marks)**  According to a 2025 Ipsos poll[^1] found that "27% of Canadians believe that *Quebec, Alberta, or both* may separate from Canada within the next 10 years". A pollster wishes to see if this sentiment is still present specifically for Canadians who live in Quebec and Alberta.
+
+(a) The pollster has determined that they are going to randomly sample $n = 1000$ Canadian residents who live in Quebec or Alberta in an attempt to estimate $p$ – the proportion of all Canadians living in these two provinces who believe that Quebec or Alberta will separate from Canada within the next 10 years. Describe the distribution of $\widehat{p}$, the sample proportion from $n = 1000$ randomly chosen Quebec and Alberta residents who hold this belief. (Ensure that your description provides a (i) distribution shape (ii) a balancing point and (iii) a measure of spread.)
+```{r}
+p = 0.27
+n = 1000
+
+# Mean of p-hat
+mean_phat = p
+
+# Standard error
+se_phat = sqrt(p * (1 - p) / n)
+
+mean_phat
+se_phat
+
+cat("Shape: Approximately Normal (by CLT since n is large)\n")
+cat("Balancing point (mean):", mean_phat, "\n")
+cat("Measure of spread (standard error):", se_phat, "\n")
+
+```
+
+(b) Suppose a recent poll of $n = 1000$ Canadians who are residents of Quebec or Alberta was taken. Of these, 240 indicated that Quebec or Alberta will separate from Canada in the next 10 years (180 responded “might happen,” 40 responded “likely to happen,” and 20 responded “definitely will happen”).The sample proportion is computed to be $\widehat{p} = \frac{240}{1000} = 0.24$.Under the assumption that the true proportion $p$ is 27% (based on the Ipsos 2025 poll), how likely is it for another random sample of $n = 1000$ Canadians (who reside in Quebec or Alberta) to produce a sample proportion that is *at least 0.24*?
+```{r}
+# (b) Probability calculation
+phat_obs = 0.24
+
+z = (phat_obs - p) / se_phat
+prob_ge_0.24 = 1 - pnorm(phat_obs, mean = mean_phat, sd = se_phat)
+
+cat("Z-score:", z, "\n")
+cat("P(phat >= 0.24) =", prob_ge_0.24, "\n")
+```
+
+
+(c) Consider the steps and associated R code required to generate a distribution of the sample proportion, $\widehat{p}$, when sampling $n = 1000$ Canadians who are residents of Quebec or Alberta, then determining the proportion who believe Quebec or Alberta will separate from Canada within the next 10 years.Carry out a simulation where you simulate 1000 random samples of size $n = 1000$, assuming the true proportion is $p = 0.27$. *Create and run your R code to determine the proportion* of your simulated $\widehat{p}$s that are at least 0.24. Provide this proportion.
+
+```{r}
+reps = 1000
+sims = rbinom(reps, size = n, prob = p) / n
+
+# Proportion of simulated p-hats >= 0.24
+prop_sim_ge_0.24 = mean(sims >= phat_obs)
+
+cat("Simulated proportion of phat >= 0.24:", prop_sim_ge_0.24, "\n")
+
+#For Fun
+hist(sims, breaks = 30,
+     main = "Simulated Sampling Distribution of phat",
+     xlab = "phat")
+```
+
+
+</br>
+</br>
+
+[^1]:https://www.ipsos.com/sites/default/files/ct/news/documents/2025-01/MEDIA%20RELEASE_Canada%20and%20the%20US_Jan%2016%202025_Final.pdf
+
+**3.(4 marks)** Billy purchases one 6-49 lottery ticket every week and keeps track of the number of "matches"" he has on each of his tickets. To be clear, a "match" will occur when a number on his ticket matches a number that appears in the winning combination. A random variable $X$ that keeps track of the number of matching numbers Billy experiences per week has the probability distribution function with a mean and standard deviation of
+$$
+P(X = x) = \frac{{6 \choose x}{43 \choose 6 - x}}{{49 \choose 6}} \hspace{0.5in} x = 0, 1, 2, 3, 4, 5, 6. \\
+E(X) = \mu_{X} = \frac{36}{49} = 0.7347 \\
+SD(X) = \sigma_{X} = 0.75998 \approx 0.76
+$$
+Billy claims that in *half-a year (26 weeks)*, on average, he manages to have *at least 2 matching numbers* on his 6-49 ticket. What do you think about Billy's claim? Provide a brief commentary about Billy's claim using your current knowledge of statistics and probability theory. 
+```{r}
+x = 0:6
+p_x = choose(6, x) * choose(43, 6 - x) / choose(49, 6)
+p_ge2 = sum(p_x[x >= 2])     
+
+weeks = 26
+E_Y = weeks * p_ge2           
+P_Y_ge1 = 1 - dbinom(0, weeks, p_ge2)  
+P_Y_ge2 = 1 - pbinom(1, weeks, p_ge2)  
+
+E_total = weeks * sum(x * p_x)  
+
+cat("P(X >= 2):", p_ge2, "\n")
+cat("Expected weeks with >=2 matches:", E_Y, "\n")
+cat("P(at least 1 week with >=2 matches):", P_Y_ge1, "\n")
+cat("P(at least 2 weeks with >=2 matches):", P_Y_ge2, "\n")
+cat("Expected total matches in 26 weeks:", E_total, "\n")
+```
+
+</br>
+</br>
+
+**4.(8 marks)** A common measure of toxicity for any pollutant is the concentration of the pollutant that will kill half of the test species in a given amount of time (usually about 96 hours for the fish species). This measurement is called the LC50, which refers to the lethal concentration killing 50% of the test species). 
+</br>
+</br>
+The Environmental Protection Agency has collected data on LC50 measurements for certain chemicals likely to be found in freshwater and lakes. For a certain species of fish, the LC50 measurements (in parts per million) for DDT in 12 experiments to determine the LC50 "dose" are
+$$
+16, 5, 21, 19, 10, 5, 8, 2, 7, 2, 4, 9 
+$$
+
+(a) Use R studio to create the bootstrap distribution of the sample mean $\overline{X}_{Boot, LC50}$. Use 2000 "bootstraps" in your work, and display the distribution.  
+```{r}
+lc50 = c(16, 5, 21, 19, 10, 5, 8, 2, 7, 2, 4, 9)
+n = length(lc50)
+
+boot_means = replicate(2000, mean(sample(lc50, n, replace = TRUE)))
+
+hist(boot_means,
+     main = "Bootstrap Distribution of Sample Mean LC50",
+     xlab = "Bootstrap Means",
+     breaks = 30)
+```
+
+
+(b) From your result in (a), compute the 95% bootstrap (percentile) confidence interval for $\mu_{LC50}$, the mean LC50 measurement for DDT.
+```{r}
+bootstrap_ci = quantile(boot_means, c(0.025, 0.975))
+bootstrap_ci
+cat("We are 95% confident that the true mean LC50 lies between", round(bootstrap_ci[1], 4), "and", round(bootstrap_ci[2], 2), "ppm using the bootstrap percentile CI")
+```
+
+(c) Repeat your estimation of $\mu_{LC50}$, using the "other" confidence interval covered in Data 602. In the **context of these data**, interpret the meaning of the confidence interval. State any conditions/assumptions that are required in the computation of this confidence interval. 
+```{r}
+x_bar = mean(lc50)
+s = sd(lc50)
+se = s / sqrt(n)
+
+t_critical = qt(0.975, df = n - 1)  # two-sided t critical value
+
+t_ci = c(x_bar - t_critical * se, x_bar + t_critical * se)
+t_ci
+cat("The t-based confidence interval assumes that the LC50 values are a random and independent sample from a population that is approximately normally distributed (or that the sample size is large enough for the Central Limit Theorem to apply). It also assumes that there are no extreme outliers that would influence the mean and standard deviation.
+\n",
+"We are 95% confident that the true mean LC50 lies between", round(t_ci[1], 4), "and", round(t_ci[2], 4), "ppm using the t-based CI.")
+```
+(d) Compare your results in parts (b) and (c). If you were to report one of these confidence intervals, which would you report? Explain your answer. 
+```{r}
+comparison = data.frame(
+  Method = c("Bootstrap Percentile CI", "t-based CI"),
+  Lower = c(bootstrap_ci[1], t_ci[1]),
+  Upper = c(bootstrap_ci[2], t_ci[2]))
+comparison 
+
+cat("\nInterpretation:\n", 
+  "The 95% bootstrap percentile confidence interval for the true mean LC50 lies between ", round(bootstrap_ci[1], 4), " and ", round(bootstrap_ci[2], 4), " ppm. ", "The t-based confidence interval lies between ",  round(t_ci[1], 4), " and ", round(t_ci[2], 4), " ppm. ", "Both intervals provide plausible ranges for the mean LC50 value. ", "However, because the sample size is small (n = 12) and the LC50 data may be slightly skewed, ", "the bootstrap confidence interval is generally preferred — it does not rely on the normality assumption ", "and is more robust to departures from normality. ", "Therefore, I would report the bootstrap percentile confidence interval." )
+```
+</br>
+</br>
+
+
+**5.(7 marks)**Does political affiliation influence Canadians’ opinions about measles? A 2025 Angus Reid survey[^2] asked Canadians to respond to the statement:
+
+<center>
+***"Measles isn’t as bad as people think it is."***
+</center>
+
+</br>
+</br>
+
+Respondents could choose from: Strongly agree, Moderately agree, Moderately disagree, or Strongly disagree.
+
+There were $n = 616$ respondents from the Conservative Party of Canada (CPC), of whom 437 indicated disagreement (either moderately or strongly). In comparison, there were also $n = 649$ respondents from the Liberal Party, with 610 expressing disagreement.
+
+
+(a) Consider the population of all individuals who identify with the Conservative Party of Canada (CPC) $\widehat{p}_{CPC}$. USing 1000 iterations/replications, create a bootstrap distribution of $\widehat{p}_{CPC}$. Display your distribution. 
+```{r}
+# CPC data
+n_cpc = 616
+x_cpc = 437
+p_hat_cpc = x_cpc / n_cpc
+
+# 1=disagree, 0=agree
+cpc_responses = c(rep(1, x_cpc), rep(0, n_cpc - x_cpc))
+
+# Bootstrap distribution (1000 resamples)
+boot_cpc = replicate(1000, mean(sample(cpc_responses, n_cpc, replace = TRUE)))
+
+# Display bootstrap distribution
+hist(boot_cpc,
+     main = "Bootstrap Distribution of p_hat_CPC",
+     xlab = "Bootstrap Proportion (CPC)",
+     col = "blue",
+     border = "black",
+     breaks = 30)
+```
+
+
+(b) Now consider a *different* population consisting of all individuals who identify with the Liberal Party. Repeat part (a), creating a bootstrap distribution for $\widehat{p}_{Lib}$. (Again, display your distribution).
+```{r}
+# Liberal data
+n_lib = 649
+x_lib= 610
+p_hat_lib = x_lib / n_lib
+
+lib_responses = c(rep(1, x_lib), rep(0, n_lib - x_lib))
+
+boot_lib = replicate(1000, mean(sample(lib_responses, n_lib, replace = TRUE)))
+
+hist(boot_lib,
+     main = "Bootstrap Distribution of p_hat_Lib",
+     xlab = "Bootstrap Proportion (Liberal)",
+     col = "green",
+     border = "black",
+     breaks = 30)
+```
+
+
+(c) You wish to estimate $p_{Lib} - p_{CPC}$, the difference between the proportion of Liberal respondents who disagree that measles isn’t serious and the proportion of CPC respondents who hold the same view.  You wish to have 95% confidence in your result.  Think about the code you created to generate the bootstrap distributions on parts (a) and (b). Modify the code to you created in parts (a) and (b) to create a distribution of the bootstrap statistic $\widehat{p}_{Lib} - \widehat{p}_{CPC}$.  
+```{r}
+boot_diff = boot_lib - boot_cpc
+
+hist(boot_diff,
+     main = "Bootstrap Distribution of Difference (p_Lib - p_CPC)",
+     xlab = "Bootstrap Difference",
+     col = "red",
+     border = "black",
+     breaks = 30)
+```
+
+
+
+(d) Consider your finding in part (c). Compute the 95% bootstrap percentile confidence interval for $p_{Lib}-p_{CPC}$. From your result, Based on this interval, determine whether the proportion of Liberal respondents who disagree that measles isn’t too serious is clearly greater than the corresponding proportion of CPC respondents. Write a paragraph explaining and supporting your conclusion.
+```{r}
+boot_ci = quantile(boot_diff, c(0.025, 0.975))
+diff_obs = p_hat_lib - p_hat_cpc
+
+cat("95% Bootstrap Percentile CI:", boot_ci, "\n\n")
+cat("Interpretation:\n",
+  "The 95% bootstrap percentile confidence interval for the difference in disagreement rates between Liberals and CPC supporters is approximately [", round(boot_ci[1], 4), ", ", round(boot_ci[2], 4), "]. ", "The observed difference in sample proportions is about ", round(diff_obs, 4), ", meaning Liberals were roughly ", round(diff_obs * 100, 1), "% more likely than CPC supporters to disagree with the statement “Measles isn’t as bad as people think it is,” ", "because the entire confidence interval lies above 0, this provides strong evidence (at the 95% confidence level) that Liberals are more likely than CPC supporters to hold this view. ",
+"The range for the size of the difference is between about ", round(boot_ci[1] * 100, 1), "% and ", round(boot_ci[2] * 100, 1), "%.\n")
+```
+
+[^2]:https://angusreid.org/measles-outbreak-canada-alberta-ontario-childhood-vaccination-mmr/
+
+
+**6.(7 marks)** In September 2023, Nanos research[^3] completed a survey of $n = 1000$ Canadians aged 18 years of age or older, asking each "what is your most important national issue of concern?" 163 responded "Inflation", 149 responded "Environment", 131 responded "Jobs/Economy". Those were the Top Three. 
+
+(a) Compute a 95% confidence interval for $p_{Inflation}$, the proportion of all Canadians aged 18 years or older for whom "Inflation" is the most important national concern. 
+```{r}
+n= 1000
+x_infl = 163
+p_hat = x_infl / n   
+
+z = 1.96
+se = sqrt(p_hat * (1 - p_hat) / n)
+
+ci_lower = p_hat - z * se
+ci_upper = p_hat + z * se
+
+cat("Sample proportion (Inflation):", round(p_hat, 4), "\n")
+cat("95% CI (normal approximation): [", round(ci_lower, 4), ",", round(ci_upper, 4), "]\n")
+```
+
+
+(b) Similar to your work in Question 4(b), create the distribution of the bootstrap statistic $\widehat{p}_{Boot, Inflation}$ and a 95% bootstrap percentile confidence interval for $p_{Inflation}$. 
+```{r}
+responses = c(rep(1, x_infl), rep(0, n - x_infl))
+
+boot_props = replicate(1000, mean(sample(responses, size = n, replace = TRUE)))
+
+# Bootstrap CI
+boot_ci = quantile(boot_props, c(0.025, 0.975))
+
+hist(boot_props,
+     main = "Bootstrap Distribution of Proportion (Inflation)",
+     xlab = "Bootstrap Proportion",
+     col = "blue", border = "black", breaks = 30)
+boot_ci
+```
+
+
+(c) A similar survey of Canadians survey earlier in August 2023 suggested that the proportion of all Canadians who identified "Inflation" as the most important national concern was $p_{Inflation, Aug2023} = 0.13$. 
+</br>
+</br>
+From your results in (a) and (b), can you infer that the proportion of all Canadians who believe "Inflation" is the most important national issue has *increased* since August of 2023? Why or why not? Ensure you invoke a statistical justification. 
+#The August 2023 estimate was 13.0%, which lies below both confidence intervals. Since 13% is not contained in either interval, it is not likely to be the true proportion in September. This provides statistical evidence (at the 95% confidence level) that the proportion of Canadians naming inflation as their top concern increased between August and September 2023. 
+
+[^3]:https://nanos.co/wp-content/uploads/2023/09/Political-Package-2023-09-08-FR-With-Tabulations.pdf
+
+
+**7.(6 marks)** Refer to the data encountered in Question 4 of this assignment. Prior to completing parts (a) and (b), carefully read through both parts (a) and (b). 
+
+(a) Use the Bootstrap method to compute a 98% confidence interval for $\widetilde{\mu}_{LC50}$, the median LC50 level. Interpret the meaning of this interval in the context of these data. 
+```{r}
+lc50 = c(16, 5, 21, 19, 10, 5, 8, 2, 7, 2, 4, 9)
+n = length(lc50)
+
+boot_median = replicate(2000, median(sample(lc50, n, replace = TRUE)))
+med_ci_98 = quantile(boot_median, probs = c(0.01, 0.99))
+
+median_obs = median(lc50)
+
+cat("Observed median LC50 =", median_obs, "\n")
+cat("98% bootstrap CI for the median: [", round(med_ci_98[1], 3), ",", round(med_ci_98[2], 3), "]\n")
+
+cat("Interpretation: We are 98% confident that the true median LC50 lies between ",
+  round(med_ci_98[1], 2), " ppm and ", round(med_ci_98[2], 2),
+  " ppm. This means that a typical LC50 value for this fish species is likely in this range.\n")
+```
+
+
+(b) Compute the 95% bootstrap percentile confidence interval for the population standard deviation, $\sigma_{LC50}$. In addition, interpret the meaning of your interval in the context of these data. 
+</br>
+</br>
+```{r}
+pop_sd = function(x) sqrt(mean((x - mean(x))^2))
+
+boot_sigma = replicate(2000, pop_sd(sample(lc50, n, replace = TRUE)))
+sigma_ci_95 = quantile(boot_sigma, probs = c(0.025, 0.975))
+
+sigma_obs = pop_sd(lc50)
+
+cat("Observed population SD =", round(sigma_obs, 3), "\n")
+cat("95% bootstrap CI for population SD: [", round(sigma_ci_95[1], 3), ",", round(sigma_ci_95[2], 3), "]\n")
+
+cat("Interpretation: We are 95% confident that the true population standard deviation of LC50 values lies between ",
+  round(sigma_ci_95[1], 2), " ppm and ", round(sigma_ci_95[2], 2),
+  " ppm. This means that LC50 measurements typically vary by roughly this amount from the average LC50 value in the population.\n")
+```
+
+**8.(7 marks)** An Ipsos poll[^4] conducted on behalf of Global News surveyed $n=1,001$ Canadians aged 18 and older. Participants were asked:
+
+<center>
+***"Do you believe the development of AI technologies is a good thing?"***
+</center>
+
+The results were as follows:
+
+-301 respondents said it is a good thing,
+-340 said it is a bad thing, and
+-360 said they do not know enough to say.
+
+(a) Compute the 95% confidence interval for $p_{good}$,  the proportion of Canadians who believe that the development of AI technologies is a good thing.
+```{r}
+n = 1001
+x_good = 301
+p_hat = x_good / n
+
+z = 1.96
+se = sqrt(p_hat * (1 - p_hat) / n)
+ci_lower = p_hat - z * se
+ci_upper = p_hat + z * se
+
+cat("Sample proportion (p_good):", round(p_hat, 4), "\n")
+cat("95% CI (normal approximation): [", round(ci_lower, 4), ",", round(ci_upper, 4), "]\n")
+```
+#We are 95% confident that between 27.2% and 32.9% of Canadians believe the development of AI technologies is a good thing.
+
+(b) Consider the bootstrap statistic $\widetilde{p}_{good} = \frac{X_{good} + 2}{n + 4}$. Write the R code that will generate a bootstrap distribution for $\widetilde{p}_{good}$. Use 1000 as the number of replications/iterations.
+```{r}
+p_tilde = (x_good + 2) / (n + 4)
+
+#Adjusted responses: 1 = "good", 0 = "not good"
+responses = c(rep(1, x_good + 2), rep(0, (n - x_good) + 2))
+
+boot_p_tilde = replicate(1000, mean(sample(responses, size = n + 4, replace = TRUE)))
+
+hist(boot_p_tilde,
+     main = "Bootstrap Distribution of p_tilde_good",
+     xlab = "Bootstrap Proportion (Adjusted)",
+     col = "blue", border = "black", breaks = 30)
+
+cat("Observed adjusted p_tilde_good =", round(p_tilde, 4), "\n")
+```
+
+
+(c) From your result in part (b), compute a 95% bootstrap confidence interval for $p_{good}$. 
+```{r}
+boot_ci = quantile(boot_p_tilde, probs = c(0.025, 0.975))
+cat("95% Bootstrap CI for p_good: [", round(boot_ci[1], 4), ",", round(boot_ci[2], 4), "]\n")
+```
+
+
+(d) Consider your results in parts (a) and (c). Compare the two results. If you had to pick one as the "best" estimate for the unknown value of $p_{good}$, which one would you select? Provide a justification for your choice. 
+#If I had to choose, I would report the bootstrap CI. The bootstrap approach does not rely on the normal approximation and is slightly more robust, particularly when proportions are not near 0.5 or when sample sizes are smaller. In this case, since the sample size is large, the two methods agree closely — but the bootstrap CI is preferred because it is data-driven and does not depend on theoretical assumptions about the sampling distribution.
+
+</br>
+</br>
+
+[^4]: https://www.ipsos.com/en-ca/34-percent-canadians-believe-development-ai-technologies-bad-thing-30-think-its-good
+
+**9.(10 marks)** In this question you will use the [albertacountiessampled2019.csv](https://github.com/Statman44/Data602/blob/main/albertacountiessampled2019.csv). The data appearing in this file are the results of a random sample of $n = 100$ counties in Alberta. For each county, the median household income was computed. This feature appears in the **OriginalValue** column. 
+</br>
+</br>
+Read this data into a R data frame. To read this into R, you will have to select the **Raw** tab appearing on the top right-hand side.
+
+The **bootstrap** $t$ statistic is defined as
+$$
+T_{Bootstrap} = \frac{\overline{X}_{Boot} - \overline{X}}{\left(\frac{S}{\sqrt{n}}  \right)}
+$$
+where $\overline{X}$ and $S$ are the mean and standard deviation of the sample. 
+
+(a) From these data, generate the distribution of $T_{Bootstrap}$. Display this distribution. Use 1000 for the number of bootstraps. 
+
+```{r}
+df = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/albertacountiessampled2019.csv")
+
+x = df$OriginalValue         
+n = length(x)
+x_bar = mean(x)
+s = sd(x)
+
+# 1000 bootstrap t-statistics
+t_boot = replicate(1000, {x_boot = sample(x, n, replace = TRUE)
+  (mean(x_boot) - x_bar) / (s / sqrt(n))})
+
+# Plot distribution
+ggplot(data.frame(t_boot), aes(x = t_boot)) +
+  geom_histogram(binwidth = 0.05, color = "black", fill = "blue", alpha = 0.7) +
+  labs(title = "Bootstrap t-statistic Distribution",
+       x = "Bootstrap t-statistic",
+       y = "Frequency") 
+```
+
+(b) Refer to part (a): A Bootstrap $t$ Confidence Interval for $\mu$ is defined as:
+$$
+\left[ \overline{X} - t^{*}_{\frac{\alpha}{2}}\left(\frac{S}{\sqrt{n}}  \right), \overline{X} + t^{*}_{1 - \frac{\alpha}{2}}\left(\frac{S}{\sqrt{n}}  \right) \right]
+$$
+where $t^{*}_{\frac{\alpha}{2}}$ and $t^{*}_{1 - \frac{\alpha}{2}}$ is are $\frac{\alpha}{2}$  and $1 - \frac{\alpha}{2}$ percentiles from the $T_{Bootstrap}$ distribution.
+</br>
+</br>
+Compute the 95% bootstrap $t$ confidence interval for $\mu_{Median\_Family\_Income}$ for all the counties in Alberta. 
+</br>
+</br>
+**Note:** $-t_{\frac{\alpha}{2}}$ will be a negative value due to the nature of the Student's $t$ distribution. Hence the "-" sign in front. 
+```{r}
+alpha = 0.05
+t_star_lower = quantile(t_boot, probs = alpha / 2)
+t_star_upper = quantile(t_boot, probs = 1 - alpha / 2)
+
+SE = s / sqrt(n)
+
+# Bootstrap t Confidence Interval 
+CI_lower = x_bar - t_star_upper * SE
+CI_upper = x_bar + t_star_upper * SE
+
+c(CI_lower, CI_upper)
+```
+
+
+(c) Compute the (i) 95% bootstrap percentile confidence interval estimate of $\mu_{Median\_Family\_Income}$ and (ii) the 95% Student's $t$ confidence interval for $\mu_{Median\_Family\_Income}$.
+```{r}
+# Bootstrap percentile CI for mean
+boot_means = replicate(1000, mean(sample(x, n, replace = TRUE)))
+percentile_ci = quantile(boot_means, c(0.025, 0.975))
+
+percentile_ci
+
+# Student's t-based CI for mean
+t_critical = qt(1 - alpha / 2, df = n - 1)
+t_CI_lower = x_bar - t_critical * SE
+t_CI_upper = x_bar + t_critical * SE
+
+c(t_CI_lower, t_CI_upper)
+```
+
+
+(d) Consider your results in parts (b) and (c): If you were to report one of these confidence intervals to a client, what would be your consultation? Provide a short paragraph explaining what the value of $\mu_{Median\_Family\_Income}$ could possibly be, and *why* you chose the method of confidence interval estimation to report from. 
+```{r}
+#Critical t value from the t-distribution
+t_critical = qt(1 - alpha / 2, df = n - 1)
+
+# Student's t Confidence Interval
+t_CI_lower = x_bar - t_critical * SE
+t_CI_upper = x_bar + t_critical * SE
+
+t_CI_lower
+t_CI_upper
+```
+#I would report the 95% bootstrap t-confidence interval for the median household income. We are 95% confident that the true mean median household income lies between $82,970.40 and $91,905.19. I chose the bootstrap t-method because it is more robust and does not require the data to be normally distributed. Median household income data is often skewed and can have outliers, which may make the traditional Student’s t-confidence interval (which in this case was $82,915.32 to $91,960.27) not that reliable. The bootstrap t-interval uses a resampled data which fixes for this and although the bootstrap percentile interval ($82,549.52 to $91,759.05) provides a similar range, the t-bootstrap interval accounts for standard error and is generally preferred for inference. Therefore, I would report the bootstrap t-interval as the most accurate to get the range of the true mean median household income.
+
+</br>
+</br>
+
+

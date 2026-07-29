@@ -1,0 +1,606 @@
+---
+title: "Multiple Linear Regression Assumptions and Logistic Regression"
+output: html_notebook
+---
+
+## ASSIGNMENT 3:
+
+## Model Assumptions  and Logistic Regression
+
+*Deadline: December 4th, 2025, by 11:59 pm. Submit to the link provided in Assignment 3 folder*
+
+**Problem 1**: 
+
+__From Assignment 1 Problem 1__, The amount of water used by the production facilities of a plant varies. Observations on water usage and other, possibly related, variables were collected for 249 months. The data is given in __water.csv file__ The explanatory variables are
+
+TEMP= average monthly temperature(degree Celsius)
+
+PROD=amount of production(10cubic)
+
+DAYS=number of operationing day in the month
+
+HOUR=number of hours shut down for maintenance
+
+The response variable is USAGE=monthly water usage(gallons/minute)
+
+
+```{r}
+waterdata = read.csv("https://raw.githubusercontent.com/DanikaLipman/DATA603/main/water.csv")
+```
+
+```{r}
+model=lm(USAGE~PROD+TEMP+HOUR+DAYS, data=waterdata)
+summary(model)
+intermodel=lm(USAGE~(PROD+TEMP+HOUR)^2, data=waterdata)
+summary(intermodel)
+finalintermodel=lm(USAGE~PROD+TEMP+HOUR+PROD*TEMP+PROD*HOUR, data=waterdata)
+summary(finalintermodel)
+```
+
+
+From the outputs above, the best-fit model is 
+
+$$
+\begin{aligned}
+\widehat{USAGE}=\widehat\beta_0PROD+\widehat\beta_1TEMP+\widehat\beta_2HOUR+\widehat\beta_3PROD*TEMP+\widehat\beta_4PROD*HOUR
+\end{aligned}
+$$
+Answer the following questions
+
+(a)  Many researchers avoid multicollinearity problems by always omitting all but one of the ''redundant'' variables from the model. By checking all pairwise combinations of predictors in scatter plots and using the VIF function, do you detect any high correlation (r>0.8) between predictors? Is there a multicollinearity problem?
+```{r}
+pairs(waterdata[, c("PROD", "TEMP", "HOUR")])
+vif(finalintermodel)
+```
+The scatter plots of TEMP, HOUR, and PROD were examined visually to identify if any pairs showed strong correlation (r > 0.8). No obvious linear relationships or high correlation signs were evident from the graphs, so based solely on the plots, there does not appear to be an obvious problem of multicollinearity among the predictors.
+
+Furthermore, I have computed the VIF for all the predictors in the final model. Most of the VIF values were quite normal, however, the VIF for PROD was slightly more than 10. This is because PROD is one of the interaction terms (PROD:HOUR and PROD:TEMP), which can generally result in a higher VIF for it. However, as it is only a little over 10, it is not considered a significant problem, and the model can still be considered as reliable.
+
+(b) Conduct a test for heteroscedasticity (non constant variance) and plot a residual plot. Is there homoscedasticity problem? 
+
+Note: make sure you use the model provided above for your analysis, and provide the correct null and alternative hypothesis, and p-value.
+Null hypothesis: The variance of the residuals is constant (homoscedasticity). 
+Alternative hypothesis: The variance of the residuals is not constant (heteroscedasticity).
+
+```{r}
+bptest(finalintermodel)
+
+plot(finalintermodel$fitted.values,
+     resid(finalintermodel),
+     xlab="Fitted values",
+     ylab="Residuals",
+     main="Residuals vs Fitted")
+abline(h=0, col="red")
+```
+The Breusch-Pagan test gave a p-value of 0.8484 which is higher than 0.05. So the null hypothesis cannot be rejected. The test affirms the absence of heteroscedasticity in the data used.
+In addition, the residuals vs. fitted plot equally demonstrates that the residuals are randomly distributed around zero without any evident funnel or pattern. Individually and combined, the plot and test indicate that the model does not violate the homoscedasticity assumption and the assumption of constant variance is fulfilled.
+
+
+(c) Provide a histogram for residuals, a normal Q-Q plot, and the Shapiro-Wilk test. Does there appear to be any problem with normality assumption? Be sure to state the hypotheses and report the p-value. 
+```{r}
+# Histogram
+hist(resid(finalintermodel),
+     main="Histogram of Residuals",
+     xlab="Residuals")
+
+# Normal Q-Q plot
+qqnorm(resid(finalintermodel))
+qqline(resid(finalintermodel), col="red")
+
+# Shapiro-Wilk test
+shapiro.test(resid(finalintermodel))
+
+```
+The residuals histogram shows a substantial skewness, which is very  different from the bell-shaped pattern normally expected. The normal Q–Q plot also reflects strong deviations from the straight line, mainly at the tails, where several points are far away from the reference line. 
+
+Shapiro–Wilk test
+Null hypothesis: residuals are normally distributed 
+Alternative hypothesis: residuals are not normally distributed
+
+The Shapiro-Wilk test gave the test statistic W = 0.67655 with a very small p-value of 2.2e-16. As the p-value is much smaller than 0.05, we rejects the null hypothesis.
+
+The plots and the formal test used here to verify the assumption of normality of residuals lead to the same conclusion, that is, the residuals are not normally distributed. 
+
+(d) Plot the residuals vs predicted value $\widehat{Y}$ plot, do you detect any patterns? Does there appear to be any problem with linearity assumption? 
+
+```{r}
+plot(finalintermodel$fitted.values,
+     resid(finalintermodel),
+     xlab="Predicted Values",
+     ylab="Residuals",
+     main="Residuals vs Predicted")
+abline(h=0, col="red")
+```
+The residuals vs. predicted values graph indicates that residuals are distributed rather equally around the zero line, without any clear curve or pattern. The majority of residuals are still very close to zero, and the dispersion of points does not look like it changes significantly for different fitted values. Since the residuals do not outline any kind of figure or pattern, it can be inferred that the assumption of linearity is met. That is to say, there is no indication of a non-linear relationship, and the linear model seems to work well for describing the data trend.
+
+(e) Do you detect any outliers by using Cook's distance measure (using cooks.distance()>1 ) and  Residual vs Leverage plot?
+```{r}
+cd <- cooks.distance(finalintermodel)
+
+which(cd > 1)
+
+plot(cd, type="h",
+     main="Cook's Distance",
+     ylab="Cook's Distance")
+abline(h=1, col="red")
+
+# Residuals vs leverage plot
+plot(finalintermodel, which=5)
+```
+Cook's distance for each observation was computed with cooks.distance(finalintermodel). It is indicated by which(cd > 1) that none of the points have a Cook's distance greater than 1, hence there are no influential outliers when considering this criterion. The graph of Cook's distance reveals that all points are under the threshold line at 1, and the Residuals vs Leverage chart is another way to see that no points are helping the model too much. 
+
+So no influential outliers have been found by Cook's distance with a threshold of 1, which means that all data points are within influence limits that are acceptable. 
+
+(f) From part a-e, determine whether your model meets the assumptions of the analysis. If not, provide any suggestions to improve the model.
+
+Most assumptions of the linear regression model as per the diagnostic checks in parts a) to e) seem to be met. There is no indication of multicollinearity, which is confirmed by the absence of high correlation among predictors. The residuals are also randomly distributed around zero, which is in line with the linearity assumption. The homoscedasticity test reflects that the variance of residuals is constant, and the Cook’s distance graph does not indicate the presence of any influential outliers. 
+
+The normality assumption was not satisfied due to a number of reasons, among which is the fact that the histogram of residuals was skewed, the points on the Q-Q plot deviate significantly from the straight line (especially in the tails), and the Shapiro-Wilk test results show that the W statistic is about 0.677 and the p-value is less than 2.2e-16; hence, the null hypothesis of normality is rejected. These all point to the fact that the residuals are not normally distributed, thus this constitutes a breach of one of the crucial assumptions required for this kind of analysis.
+
+To make the model better, the response variable could be transformed to help equalize the variance and to make the residuals more normal. The Box–Cox transformation illustrated by the graph indicates an optimal λ (close to [value from the plot, e.g. around 0.5]) that can be employed to convert the response, thus, making the residuals more normally distributed and the model more valid. 
+```{r}
+boxcox(finalintermodel)
+```
+
+
+__Suggestion!__
+For situations in which the errors are homoscedastic but non-normal, normalizing transformations are available. This family of transformation includes log(y), as well as such simple transformations as $y^2$, $\frac{1}{\sqrt{y}}$, and $\frac{1}{y}$. Box and Cox have developed a procedure for selecting the appropriate transformation to use.
+
+------------------------------------------------------
+
+**Problem 2:** 
+
+__From Assignment 2 Problem 4(c)__, variables CGDUR, MEM and SOCIALSU are consistently selected as the best predictors. 
+
+```{r}
+KBI=read.csv("https://raw.githubusercontent.com/DanikaLipman/DATA603/main/KBI.csv", header = TRUE)
+model=lm(BURDEN~(CGDUR+ MEM +SOCIALSU) , data=KBI)
+summary(model) 
+```
+
+```{r}
+interactionmodel=lm(BURDEN~(CGDUR+ MEM +SOCIALSU)^2 , data=KBI)
+summary(interactionmodel) 
+```
+
+From the output above, none of interaction terms are significant. Therefore,the final model for prediction is 
+$$
+\widehat{BURDEN}= 115.539 + 0.566MEM - 0.49237SOCIALSU + 0.121CGDUR
+$$
+
+Use the final model above to answer the following questions
+
+(a) Check normality, homoscedasticity, and linearity assumptions. 
+```{r}
+# Residuals vs. Fitted plot
+plot(fitted(model), residuals(model),
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted")
+abline(h=0, col="red")
+
+# Q–Q plot for normality
+qqnorm(residuals(model))
+qqline(residuals(model), col="red")
+
+# Shapiro-Wilk test
+shapiro.test(residuals(model))
+```
+
+To determine if residuals fit the assumptions of normality, homoscedasticity, and linearity, I conducted the Shapiro-Wilk test (which produced a W statistic of 0.98407 with a p-value of 0.2716, which exceeds 0.05), and created Q-Q plots for visual assessment of residuals against normal distribution. The findings of the Shapiro-Wilk test suggest that the null hypothesis regarding the normality of residuals can be accepted as there is not enough statistical evidence to reject it. However, visual assessment of Q-Q plot shows significant variation from typical patterns of normal residual data, supporting an outcome contrary to what was expected based solely on the Shapiro-Wilk test's results. For testing homoscedasticity (equal variance), I examined the plot of residuals against fitted values to identify if they display random clustering about the x-axis with no distinct pattern or funneling effect suggesting evidence supports equal variance across all fitted values. The fact that there appears to be no evidence of non-linear clustering of residuals against fitted values indicates a true linear relationship exists between predictor(s) and response variable. Overall, diagnostic tests indicate that residuals meet the criteria for normality, homoscedasticity, and linearity based on available tests.
+
+(b) Do you detect any outliers by using leverage values greater that $\frac{3p}{n}$? If yes, create a new data set that removes these outliers.
+```{r}
+p <- length(coef(model))  # number of predictors + intercept
+n <- nrow(KBI)            # total observations
+leverage <- hatvalues(model)
+threshold <- (3 * p) / n
+
+# influential points
+outliers <- which(leverage > threshold)
+print(outliers)
+
+# Removing outliers
+KBI_clean <- KBI[-outliers, ]
+```
+Two outliers were detected at indices 58 and 71, and a new dataset was created by removing these points.
+
+
+(c) Fit the model 
+```{r}
+model_clean <- lm(BURDEN ~ MEM + SOCIALSU + CGDUR, data=KBI_clean)
+summary(model_clean)
+```
+The linear model has been refitted onto the cleaned dataset, which includes all three predictor variables (MEM, SOCIALSU, and CGDUR). It was found that MEM (estimate = 0.558, p < 0.001) and SOCI as well (estimate = -0.494, p < 0.001) remain highly significant in their contributions to the overall prediction of BURDEN. CGDUR, which previously had an estimate of 0.162, and p-value close to 0.035, is also statistically significant now that we have removed the outliers from our data. In addition, when we compared this model to the previous model created from the original data, we found that the residual standard error (have been retrying) slightly decreased from 15.25 to 15.19. The improvement is small but the accuracy of the predictions has increased just a bit. In addition, the adjusted R Squared value has increased from .4222 to .4300. Due to the relatively small significant decreases in both residual standard error and adjusted R Squared and the higher level of significance of CGDUR since we removed the outlier observations, we conclude that by eliminating the outlier observations we have created a better, more accurate, and more complete overall model.
+
+$$
+\widehat{BURDEN}= \widehat{\beta_0} + \widehat{\beta_1}MEM + \widehat{\beta_2}SOCIALSU + \widehat{\beta_3}CGDUR
+$$
+
+again using the new dataset created in part (b). Compare the results with the model the final model from __From Assignment 2 Problem 4(c)__ . Do you notice any difference in the results of this model using two different data sets? Compare RSE, significance, and adjusted $R^2$.
+
+```{r}
+# Fit the model on original dataset
+model_original <- lm(BURDEN ~ MEM + SOCIALSU + CGDUR, data=KBI)
+
+# Fit the model on dataset after removing outliers
+model_clean <- lm(BURDEN ~ MEM + SOCIALSU + CGDUR, data=KBI_clean)
+
+# residual standard error
+rse_original <- summary(model_original)$sigma
+rse_clean <- summary(model_clean)$sigma
+
+# adjusted R-squared
+adj_r2_original <- summary(model_original)$adj.r.squared
+adj_r2_clean <- summary(model_clean)$adj.r.squared
+
+# p-values for predictors
+pvals_original <- coef(summary(model_original))[,4]
+pvals_clean <- coef(summary(model_clean))[,4]
+
+cat("Residual Standard Error (RSE):\n")
+cat("Original dataset:", rse_original, "\n")
+cat("Cleaned dataset:", rse_clean, "\n\n")
+cat("Adjusted R-squared:\n")
+cat("Original dataset:", adj_r2_original, "\n")
+cat("Cleaned dataset:", adj_r2_clean, "\n\n")
+cat("P-values for Predictors:\n")
+cat("Original dataset:\n")
+print(pvals_original)
+cat("\nCleaned dataset:\n")
+print(pvals_clean)
+```
+The comparison shows a slight improvement in model fit after removing outliers, with RSE decreasing from 15.24611 to 15.19434 and adjusted R-squared increasing from 0.4222 to 0.4300. The significance of predictors remains stable, indicating the relationships are consistent across both data sets.
+
+
+----------------------------------------------------------------
+
+**Problem 3**: 
+
+The Western Collaborative Group Study (WCGS), a prospective cohort study, recruited middle-aged men (ages 39 to 59) who were employees of 10 California companies and collected data on 3154 individuals during the years 1960-1961. These subjects were primarily selected to study the relationship between behavior pattern and the risk of coronary hearth disease (CHD). A number of other risk factors were also measured to provide the best possible assessment of the CHD risk associated with behavior type. Additional variables collected include age, height, weight, systolic blood pressure, cholesterol, smoking.
+
+
+The list of variables with a short description is provided below:
+
+ID: Subject ID
+
+Age: age in years
+
+sbp: Systolic blood pressure: mm Hg
+
+dbp: Diastolic blood pressure: mm Hg
+
+chol: Cholesterol: mg/100 ml
+
+Behavior pattern:
+
+ncigs: Smoking: Cigarettes/day
+
+dibpt: Dichotomous behavior pattern: 0 = Type B; 1 = Type A
+
+chd: Coronary heart disease event: 0 = none; 1 = yes
+
+time: Observation (follow up) time: Days
+
+bmi: Body mass index
+
+The cleaned data can be loaded as follows:
+
+```{r}
+WCGS = read.csv("https://raw.githubusercontent.com/MAminghafari/Courses/refs/heads/main/CLEANEDWCGS",stringsAsFactors = FALSE)
+WCGS
+```
+
+## Data Inspection and Data Splitting for Logistic Regression
+
+**Step 1:Data Inspection** 
+
+Check the dimensions and the names of the variables and check the class distribution of the target variable “chd”.
+
+```{r}
+dim(WCGS)
+str(WCGS)
+table(WCGS$chd)
+```
+**Step 2: Splitting Dataset**
+
+Split the dataset into training (70%) and testing (30%) sets using stratified sampling to maintain the class distribution of chd in both sets. The codes are provided below
+
+```{r}
+library(MASS)
+library(caTools)
+set.seed(123)
+split <- sample.split(WCGS$chd, SplitRatio = 0.7)
+trainSet <- subset(WCGS, split == TRUE)
+testSet <-  subset(WCGS, split == FALSE)
+
+# distribution of chd in both sets
+table(trainSet$chd)
+table(testSet$chd)
+```
+From the codes above we obtained 2 datasets called **trainSet** and **testSet** 
+
+Now let's use these datasets for our model evaluations. Answer the following questions
+
+(a) Use the trainset to test the full model if the risk of coronary hearth disease (CHD) depends on the factors mentioned above at $\alpha=0.1$ 
+
+**Note: exclude ID in your full model.**
+
+```{r}
+full_model <- glm(chd ~ age + sbp + dbp + chol + ncigs + dibpat + bmi, data=trainSet, family=binomial)
+summary(full_model)
+```
+I used the train data for fitting a full logistic regression model to identify the factors which influence the risk of CHD. The model consisted of age, systolic and diastolic blood pressure, cholesterol, smoking, behavior pattern, and BMI. The results reveal that age, cholesterol, smoking, behavior pattern, and BMI are statistically significantly associated with increased CHD risk at the 10% level. Systolic blood pressure is barely significant, while diastolic blood pressure does not have a notable effect. In general, these results highlight that several important factors play a role in the risk of CHD, some of the variables being more strongly related than others.
+
+
+(b) build the logistic regression by removing insignificant variables from part (a) and write a logit model and logistic regression model for predicting the the risk of coronary hearth disease.
+```{r}
+model3 <- glm(chd ~ age + chol + ncigs + dibpat + bmi, data=trainSet, family=binomial)
+summary(model3)
+```
+The results indicate that all the variables left are still very significant predictors of CHD at a 0.1 level. In particular, age is associated with an estimated coefficient of 0.0714, which implies that an additional year of age increases the log-odds of CHD occurrence by about 0.0714. In a similar way, cholesterol (chol) is associated with a coefficient of 0.0107 implying that the increase in cholesterol level leads to a higher risk of CHD. The number of cigarettes consumed (ncigs) is related to a coefficient of 0.0177 which shows that the risk is elevated if a smoker increases the number of cigarettes smoked per day. The log-odds of CHD being in behavior pattern type A as compared to type B is increased by about 0.79.
+
+BMI is associated with a coefficient of 0.0995 indicating that an increase in BMI raises the risk of CHD. 
+
+So, the results are older age, higher cholesterol, smoking, certain behavior patterns, and increased BMI significantly leading to the risk of CHD which have resulted in forming a more parsimonious prediction model with meaningful implications.
+
+(c) From the model in part (b), predict the risk of having a coronary hearth disease (CHD) of a 44 years old man,does not smoke, systolic blood pressure=150 mm Hg,cholesterol level=300 mg/100 ml, follow up time=1050 days, and dichotomous behavior pattern= Type A.
+
+```{r}
+new_patient <- data.frame(
+  age = 44,
+  chol = 300,
+  ncigs = 0,
+  dibpat = 1,
+  bmi = 25
+)
+
+
+predicted_risk <- predict(model3, newdata = new_patient, type = "response")
+print(predicted_risk)
+```
+```{r}
+linear_pred <- -1.876995
+probability <- 1 / (1 + exp(-linear_pred))
+print(probability)
+```
+The probability of having CHD for that individual is approximately 0.133, or 13.3%.
+
+
+## Misclassification in Logistic Regression:
+
+Misclassification happens when the predicted probability from the logistic model is incorrectly interpreted or thresholded.
+
+**Steps to address misclassification in logistic regression**
+
+1. Make predictions on the testSet (test dataset) using the full model provided below. 
+
+
+```{r}
+logisticModel <- glm(chd ~ age + sbp + dbp +  chol + ncigs + time +  bmi+factor(dibpat), data = trainSet, family = binomial())
+```
+
+```{r}
+probabilities <- predict(logisticModel, newdata = testSet, type = "response")
+predictedClasses <- ifelse(probabilities > 0.5, 1, 0)
+```
+
+2.Compute Confusion matrix and determine how many observation were correctly or incorrectly classified
+
+```{r}
+actualClasses <- testSet$chd
+table(predictedClasses,actualClasses)
+```
+```{r}
+misclassificationRate <- mean(predictedClasses != actualClasses)
+accuracy <- 1 - misclassificationRate
+
+cat("Misclassification Rate:", misclassificationRate, "\n")
+```
+```{r}
+cat("Accuracy:", accuracy, "\n")
+```
+From the output above, the accuracy rate is 93.3192% and misclassification Rate is 6.68%
+
+
+Answer the following questions
+
+(d) from the instructions above, compute the the accuracy and misclassification Rate using the reduced model in part b, when the threshold=0.3.
+```{r}
+# predicted probabilities with your model3
+probabilities <- predict(model3, newdata = testSet, type = "response")
+
+#threshold = 0.3
+predictedClasses <- ifelse(probabilities > 0.3, 1, 0)
+
+actualClasses <- testSet$chd
+confusion_matrix <- table(predictedClasses, actualClasses)
+print(confusion_matrix)
+misclassificationRate <- mean(predictedClasses != actualClasses)
+accuracy <- 1 - misclassificationRate
+
+# Output results
+cat("Misclassification Rate (threshold=0.3):", misclassificationRate, "\n")
+cat("Accuracy (threshold=0.3):", accuracy, "\n")
+```
+The accuracy of the reduced model at threshold=0.3 is about 91.83%.
+The misclassification rate is about 8.17%.
+
+
+
+(e) Compute AUC, ROC curve and discuss about performance of reduced model.
+```{r}
+probabilities <- predict(model3, newdata = testSet, type = "response")
+actualClasses <- testSet$chd
+
+# ROC and AUC
+roc_obj <- roc(actualClasses, probabilities)
+auc_value <- auc(roc_obj)
+
+# Plot ROC
+plot(roc_obj, main = paste("ROC Curve - AUC:", round(auc_value, 3)))
+```
+```
+The limited logistic regression has an AUC score of 0.742, which represents a reasonably good implementation of discrimination. Thus, this means that the model can effectively categorize individual patients according to the risk of developing a disease however, it is still not performing optimally.
+```
+------------------------------------------------------------
+
+
+**Problem 4**: 
+
+We did not detect any outliers from the output using Cook’s distance. The RMS Titanic was a British passenger liner that sank in the North Atlantic Ocean in the early morning of 15 April 1912 after colliding with an iceberg during its maiden voyage from Southampton to New York City. The RMS Titanic was the largest ship afloat when it entered service and was the second of three Olympic-class ocean liners operated by the White Star Line. The Titanic was built by the Harland and Wolff shipyard in Belfast. Thomas Andrews, her architect, died in the disaster. The training-dataset with 891 examples is provided in https://raw.githubusercontent.com/DanikaLipman/DATA603/refs/heads/main/titanic.csv
+
+```{r}
+titanic = read.csv("https://raw.githubusercontent.com/DanikaLipman/DATA603/refs/heads/main/titanic.csv")
+titanic
+```
+
+The list of variables with a short description is provided:
+
+- survival:    Survival 
+
+- Passenger Id: Unique Id of a passenger. 
+
+- pclass:    Ticket class     
+
+- sex:    Sex     
+
+- Age:    Age in years     
+
+(a) Test if the chances of survival of passengers in Titanic depends on those variables (exclude Passenger when building your model) at $\alpha=0.05$
+Null hypothesis: The variables do not affect survival. 
+Alternative hypothesis: At least one variable affects survival.
+```{r}
+model <- glm(Survived ~ Pclass + Sex + Age, data = titanic, family = binomial)
+summary(model)
+```
+Pclass has a coefficient equal to -0.9653, with a p-value of <2.00E-16, which indicates a very strong negative effect of belonging to the Pclass group on the odds of survival. Being a male has an even stronger negative coefficient (-2.6479) and has a similar p-value. When compared to females, being male significantly decreased the probability of survival. On the other hand, Age has a very small positive coefficient of 0.00455, with a p-value of 0.455, which is well above the commonly accepted threshold for significance. Once you have taken into account Pclass and Sex, it appears that Age does not serve as a predictor of survival in this data set.
+
+Therefore, the predictor variables of Pclass and Sex are very important predictors of whether or not an individual survived, however, Age does not appear to predict whether or not an individual will survive in this model.
+
+(b) From part (a), use the likelihood ratio test to check whether the variable age should be in the full model.
+```{r}
+model_reduced <- glm(Survived ~ Pclass + Sex, family = binomial, data = titanic)
+lrtest(model, model_reduced)
+```
+The likelihood ratio test shows Model 1, which includes Pclass, Sex, and Age, has a log-likelihood of -413.32. Model 2 has an AIC of -413.60 with only Pclass and Sex included. The test statistic was 0.5566 with a p-value of 0.4556. 
+
+The null hypothesis suggests that Age variable adds nothing to the model and hence should be discarded. As the p-value of 0.4556 is much larger than the significance level of 0.05, there is no statistically significant evidence that supports that Age should be in the model. 
+
+
+(c) Write the logit  and logistic regression model for predicting the chances of survival of passengers in Titanic.
+The logit model (linear predictor): 
+logit(p) = β0 + β1 × Pclass + β2 × Sex + β3 × Age
+logit(p) = 3.169 − 0.965 × Pclass − 2.648 × Sex(male) + 0.00455 × Age
+
+The logistic regression model (probability of survival):
+p = 1 / (1 + e^−(β0 + β1 x Pclass + β2 x Sex + β3 x Age))
+p = 1 / (1 + e^−(3.169 − 0.965 × Pclass − 2.648 × Sex(male) + 0.00455 × Age))
+
+
+(d) Report  Deviance, AIC, ROC with AUC (the model fit) from the model in part (c) 
+```{r}
+model_c <- glm(Survived ~ Pclass + Sex + Age, family = binomial, data = titanic)
+
+deviance_value <- deviance(model_c)
+aic_value <- AIC(model_c)
+pred_probs <- predict(model_c, type = "response")
+roc_obj <- roc(titanic$Survived, pred_probs)
+auc_value <- auc(roc_obj)
+
+cat("Deviance:", deviance_value, "\n")
+cat("AIC:", aic_value, "\n")
+cat("AUC:", auc_value, "\n")
+```
+The model has a deviance of 826.639, an AIC of 834.639, and an AUC of 0.8352. 
+
+(e) Build the logistic regression with interaction terms and write the logit model. Use the likelihood ratio test to confirm your result.
+```{r}
+model_e <- glm(Survived ~ Pclass * Sex + Age, family = binomial, data = titanic)
+
+# logit(p) = β0 + β1*Pclass + β2*Sex + β3*(Pclass*Sex) + β4*Age
+
+#reduced model without interaction
+model_reduced <- glm(Survived ~ Pclass + Sex + Age, family = binomial, data = titanic)
+
+# likelihood ratio test
+lrtest(model_e, model_reduced)
+```
+The logistic regression model, including the interaction between passenger class (Pclass) and sex, is formulated as:
+logit(p) = β0 + β1 x Pclass + β2 x Sex + β3 (Pclass × Sex) + β4 x Age
+This model (glm) includes Pclass * Sex + Age as the response variable and Pclass, Sex, and Age as predictor variables. A second glm model has been fit without the interaction term of Sex and Pclass. The statistical test performed to assess the significance of adding the interaction term was the chi-square test for likelihood ratios with 1 degree of freedom and a chi-square statistic of 24,427. The p-value for this chi-square test was extremely low (7.278 × 10−7), indicating that adding the interaction term substantially improved how well the model "fit" the data; thus, we are justified in using the model with the interaction term between Pclass and Sex.
+
+f) Write the logit model for a person who got the second class ticket.
+```{r}
+coef_estimates <- coef(summary(model_e))
+print(coef_estimates)
+```
+
+
+For a female with second-class ticket: logit(p)=β0+2β1+β4×Age
+Final female model: logit(p) = 1.871 + 0.00584×Age
+
+For a male with second-class ticket: logit(p)=β0+2β1+β2+2β3+β4×Age
+Final male model: logit(p) = -1.471 + 0.00584×Age
+
+
+g) Report  Deviance,AIC, ROC with AUC (the model fit) from the model in part e) and compare the result with the model in part c). 
+```{r}
+cat("Part e): Deviance =", deviance(model_e), "AIC =", AIC(model_e), "\n")
+cat("Part c): Deviance =", deviance(model_c), "AIC =", AIC(model_c), "\n")
+
+# probabilities
+prob_e <- predict(model_e, type = "response")
+prob_c <- predict(model_c, type = "response")
+actual <- titanic$Survived
+
+# ROC and AUC
+auc_e <- auc(roc(actual, prob_e))
+auc_c <- auc(roc(actual, prob_c))
+cat("AUC Part e:", auc_e, "\nAUC Part c:", auc_c, "\n")
+```
+The results show that the model with interaction terms (part e) has a slightly lower deviance (802.21 vs. 826.64) and AIC (812.21 vs. 834.64), indicating a marginally better fit. Both models have identical AUC values (~0.8352), suggesting similar discriminative ability.
+
+h) From the model in part e), predict the probability of survival for a 35 years old man who got the third class ticket. Comment on your result.
+```{r}
+beta0 <- 5.903
+betaPclass <- -2.016
+betaSex <- -6.084
+betaInteraction <- 1.371
+betaAge <- 0.00584
+
+# 35-year-old male, Pclass=3
+Pclass <- 3
+Sex <- 1
+Age <- 35
+
+#logit
+logit_p <- beta0 + betaPclass * Pclass + betaSex * Sex + betaInteraction * Pclass * Sex + betaAge * Age
+
+# probability
+prob <- 1 / (1 + exp(-logit_p))
+prob
+```
+The predicted probability of survival in the case of a third-class passenger male, aged 35 years, is about 12.9%. This very low probability indicates that the model has resulted in a decreased likelihood of survival of third-class males, taking into consideration age and gender factors. The logistic regression coefficients are combined correctly to give a quantitative estimate that agrees with the model's insight into the determinant factors for survival in this dataset.
+
+i) From the model in part e), check assumptions if necessary.
+```{r}
+# Influence plot
+influencePlot(model_e)
+
+# VIF for multicollinearity
+vif(model_e)
+
+# Hosmer-Lemeshow goodness-of-fit
+hoslem.test(titanic$Survived, fitted(model_e))
+
+# Residuals vs Fitted
+plot(fitted(model_e), residuals(model_e, type = "deviance")); abline(h=0, col="red")
+```
+The assumption of linearity in the logit for Age appears satisfied, as residual plots show no pattern. No influential outliers are detected based on Cook’s D and leverage values. However, multicollinearity is evident in our analysis based on the high VIF values of Pclass, Sex (and their interaction), indicating the possibility of unstable coefficient estimates due to their correlation. The result of the Hosmer-Lemeshow test (p=0.105) indicates that the logistic regression model provides an adequate fit for our data. Overall, all assumptions of the model are met with the exception of multicollinearity, which requires attention to improve the stability of the coefficient estimate.
+
+------------------------------------------------------------
+
+***Some notes for this assignment:***
+
+In logistic regression, when you have categorical variables, make sure you write the logistic model, the odds model, and the logit for each category. For example, if you have variables class 1,2,3 and gender: male/female, provide the individual models from male-class 1 ... male-class 3, female-class 1 ... female-class 3

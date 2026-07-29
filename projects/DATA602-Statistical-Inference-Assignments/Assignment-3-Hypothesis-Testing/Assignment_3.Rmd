@@ -1,0 +1,487 @@
+---
+title: "Data 602 - Assignment Three"
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "Due September 28, 2025 @ 11:59pm"
+---
+
+Attempt all problems below. You will be required to complete this assignment in R Notebook or R Markdown. Submit a .pdf version to Gradescope.ca. 
+</br>
+</br>
+Ensure you justify all computation and data visualizations with accompanying code. 
+</br>
+</br>
+
+**1.** (8 marks) The data set **NCBirths2004** consists of the Weight (in grams) of $n = 1009$ babies born in the state of North Carolina in 2004. All babies appearing in this sample had a gestation periods of at least 37 weeks and were single births. Other variables in this data set include the Age of the birth mother, whether or not the birth mother was a Smoker during the gestation period, used Alcohol during the gestation period, the Gender of the baby. To access these data, install the `resampledata` package. For example, 
+
+```{r include=FALSE}
+#install.packages('plyr', repos = "http://cran.us.r-project.org")
+```
+
+```{r}
+#install.packages("resampledata", repos = "http://cran.us.r-project.org")
+library(resampledata)
+```
+
+**Note:** This package has been installed in the R Studio "cloud" through the Data Science Hub. You will not be able to "install" this package on your version of R Studio through the datasciencehub.ucalgary.ca, as the packages you see in the "packages" pane are fixed for the moment. 
+
+
+```{r}
+head(NCBirths2004, 4)
+```
+
+The feature/variable **Weight** represents the birth weight, in grams. 
+</br>
+</br>
+Let $\mu_{NonSmoker}$ be the mean birth weight of all babies born in North Carolina in 2004 to birth mothers who did not smoke during pregnancy, and $\mu_{Smoker}$ be the mean birth weight of all babies born in North Carolina in 2004 to birth mothers who did smoke during pregnancy. 
+
+(a) Create the bootstrap distribution for $\overline{X}_{NonSmoker} - \overline{X}_{Smoker}$. Be sure to include a visual of the distribution.
+```{r}
+non_smoker_weights = NCBirths2004$Weight[NCBirths2004$Smoker == "No"]
+smoker_weights     = NCBirths2004$Weight[NCBirths2004$Smoker == "Yes"]
+
+# Bootstrap parameters
+B = 5000  # number of bootstrap resamples
+boot_diff = numeric(B)
+
+for (i in 1:B) {
+  resample_non = sample(non_smoker_weights, length(non_smoker_weights), replace = TRUE)
+  resample_sm  = sample(smoker_weights, length(smoker_weights), replace = TRUE)
+  boot_diff[i] = mean(resample_non) - mean(resample_sm)
+}
+
+# Plot bootstrap distribution
+hist(boot_diff, breaks = 40, main = "Bootstrap Distribution of Difference in Means (Non-Smoker - Smoker)", xlab = "Difference in Means (grams)") 
+abline(v = mean(boot_diff), col = "red", lwd = 2)
+```
+
+
+
+
+(b) From your result in (a), compute the 95% confidence interval for $\mu_{NonSmoker} - \mu_{Smoker}$. 
+```{r}
+boot_ci = quantile(boot_diff, c(0.025, 0.975))
+boot_ci
+```
+
+
+(c) Compute the 95% confidence interval for $\mu_{NonSmoker} - \mu_{Smoker}$, using the $t$-version. 
+```{r}
+t_res = t.test(Weight ~ Smoker, data = NCBirths2004, var.equal = FALSE)
+t_res$conf.int
+```
+
+
+
+(d) Consider your result in both (b) and (c). What can you infer from these data? Do children born to birth mother who did not smoke during pregnancy weigh more on average than babies born to birth mothers who did smoke during pregnancy? 
+#The bootstrap confidence interval and the t-based confidence interval are above zero. So we have strong evidence that babies born to non-smoking mothers weigh more on average than those born to mothers who smoked during pregnancy.
+
+</br>
+</br>
+
+
+
+**2.** (8 marks) Refer to Question 1. 
+
+(a) Create a distribution of the bootstrap statistic $\frac{S_{Smoker}}{S_{NonSmoker}}$. Use 1000 as the number of iterations/replications and provide a visualization of this distribution. 
+```{r}
+boot_ratio = numeric(1000)
+
+for (i in 1:1000) {
+  resample_sm  = sample(smoker_weights, length(smoker_weights), replace = TRUE)
+  resample_non = sample(non_smoker_weights, length(non_smoker_weights), replace = TRUE)
+  boot_ratio[i] = sd(resample_sm) / sd(resample_non)
+}
+
+# Plot distribution
+hist(boot_ratio, breaks = 40,
+     main = "Bootstrap Distribution of Ratio of SDs (Smoker / Non-Smoker)",
+     xlab = "Ratio of SDs")
+abline(v = mean(boot_ratio), col = "red", lwd = 2)
+```
+
+
+(b) Create a Normal Probablity Plot of this bootstrap statistic. Does the ratio of the sample standard deviations appear to follow a Normal distribution? Explain.
+```{r}
+qqnorm(boot_ratio)
+qqline(boot_ratio, col = "red", lwd = 2)
+```
+
+
+
+(c) Compute the 95% bootstrap percentile interval for $\frac{\sigma_{Smoker}}{\sigma_{NonSmoker}}$.
+```{r}
+boot_ci_ratio = quantile(boot_ratio, c(0.025, 0.975))
+boot_ci_ratio
+```
+
+
+(d) Consider the result you obtained in part (c). Explain the practical meaning of this result with respect to the variable **Weight**.
+#The interval includes 1, which means the variability in birth weights of babies born to smoking mothers is about the same as the variability for babies of non-smoking mothers. So smoking affects the average weight, but not the spread of weights.
+
+
+**3.** (10 marks) Health Canada sets an action level for mercury in fish at 0.5ppm (part per million). If mercury levels are higher than this value, then this value in commercial fish then Health Canada will take action to impose a moritorium on fishing in the area where the fish are harvested. 
+
+Recently, there have been concerns about mercury levels in walleye fish populating the portion of the Athabasca River that is down stream from Whitecourt, where local First Nations harvest walleye as part of a commercial fishing operation. 
+
+A biologist randomly picked $n = 30$ walleye from a recent commercial fishing catch downstream from Whitecourt, and measured the mercury (in ppm) from each walleye. The ppms, are provided below. 
+
+$$
+0.45, 0.61, 0.56, 0.54, 0.58, 0.56, 0.47, 0.47, 0.46, 0.53, 0.76, 0.59, 0.48, 0.68, 0.57, \\ 0.48, 0.55, 0.58, 0.58, 0.56, 0.59, 0.41, 0.54, 0.60, 0.53, 0.44, 0.43, 0.50, 0.56, 0.50
+$$
+
+Use an $\alpha$ of 0.05 for all hypothesis tests.
+
+
+(a) Establish a statistical hypothesis that allows the biologist to see if mercury levels in walleye fish harvested from the Athabasca River (downstream of Whitecourt) exceed Heath Canada's action level. 
+$$
+Ho:μ=0.5 
+$$
+Null hypothesis is that the mean mercury level in walleye fish harvested downstream of Whitecourt is equal to Health Canada’s action level of 0.5 ppm.
+$$
+Ha:μ>0.5
+$$
+The alternative hypothesis is that the true mean mercury level is greater than 0.5 ppm.
+
+(b) Refer to your hypotheses in (a). In the context of your statistical hypotheses in part (a), explain *both* a Type I Error and a Type II Error.
+#Type I Error: Concluding that the mean mercury level in walleye is greater than 0.5 ppm when in reality it is not greater than 0.5 ppm.
+#Type II Error: Concluding that the mean mercury level in walleye is not greater than 0.5 ppm when in fact the mean level is above 0.5 ppm.
+
+
+(c) Visualize these data with either a violin plot or a boxplot, and comment on the disribution of mercury levels on walleye harvested from the Athabaska River downstream from Whitecourt.
+```{r}
+mercury = c(0.45, 0.61, 0.56, 0.54, 0.58, 0.56, 0.47, 0.47, 0.46, 0.53, 0.76, 0.59, 0.48, 0.68, 0.57, 0.48, 0.55, 0.58, 0.58, 0.56, 0.59, 0.41, 0.54, 0.60, 0.53, 0.44, 0.43, 0.50, 0.56, 0.50)
+
+# Boxplot
+boxplot(mercury, main = "Boxplot of Mercury Levels in Walleye", ylab = "Mercury (ppm)")
+abline(h = 0.5, col = "red", lty = 2)
+```
+#The median mercury level is above 0.5 ppm, and most observations exceed Health Canada’s action level. Distribution looks fairly symmetric, with a few higher values (0.68, 0.76).
+
+
+(d) Do these data suggest that Health Canada should place a moratorium on commercial walleye fishing on the Athabaska River downstream of Whitecourt? In your finding, interpret the meaning of the $P$-value you have computed. *IF* you reject the null hypothesis, provide a 95% confidence interval for the mean mercury (in ppm) of walleye found downstream from Whitecourt. 
+```{r}
+# One-sample t-test 
+t_test = t.test(mercury, mu = 0.5, alternative = "greater")
+t_test
+```
+Since the p-value is less than 0.05, we reject Ho . There is strong evidence that the true mean mercury concentration in walleye exceeds 0.5 ppm. The 95% confidence interval shows that the true mean mercury level is above 0.5 ppm, which is above Health Canada’s action level. So, Health Canada should impose a moratorium on commercial walleye fishing downstream of Whitecourt.
+
+
+**4.** (6 marks) According to Statistics Canada, 6.1% of all Albertans reported they could speak conversational French in 2021. Recently, researchers investigating the French language in Canada took a representative, random sample of $n = 900$ Albertans, of which 42 reported they could speak conversational French.
+</br>
+</br>
+
+Is there ample statistical evidence to suggest that the percentage of Albertans who can speak conversational French has decreased since 2021? 
+Ensure you completely justify your answer, using method(s) covered in DATA 602. In conducting your hypothesis do not use the Central Limit Theorem, and use an $\alpha$ of 0.05.
+$$
+Ho:p=0.061
+$$
+Null hypothesis: The true proportion of Albertans who can speak conversational French is 6.1%.
+$$
+Ha:p<0.061
+$$
+
+Alternative hypothesis: The true proportion has decreased (is less than 6.1%).
+
+Assumptions: sample is a representative random sample and each person’s “can speak conversational French” is a Bernoulli trial → model X∼Binomial(n,p).
+```{r}
+x = 42
+n = 900
+p_null = 0.061
+
+# exact one-sided binomial test (H_a: p < p_null)
+binom.test(x, n, p = p_null, alternative = "less")
+```
+The one-sided p-value is 0.03811, which is less than 0.05. So we reject the null hypothesis (Ho). 
+
+Interpretation: If the true proportion were 0.061, the probability of observing 42 or fewer speakers in a sample of 900 is about 3.8%, which is very unlikely.
+
+Conclusion: The percentage of Albertans who can speak conversational French has decreased since 2021.
+
+
+**5.** (6 marks) Refer to Assignment 2, Question 8, specifically results from the most recent poll (2024) of persons in Canada and their beliefs about AI development. In this survey it was found that 30% of Canadians aged 18 and older believe that the development of AI technologies is a good thing [^1]
+</br>
+</br>
+A more recent pole of $n = 350$ found that 123 Canadians aged 18 and older believe that the development of AI technologies is a good thing.
+Does the recent poll indicate that the proportion Canadians aged 18 and older who believe the development of AI technologies is a good thing has increased since the 2024 poll? Within your justification, provide the $P$-value and interpret its meaning on the context of these data. In conducting your hypothesis do not use the Central Limit Theorem, and use an $\alpha$ of 0.05.
+</br>
+</br>
+
+$$
+Ho:p=0.3
+$$
+Null hypothesis: The true proportion of Canadians (18+) who think AI development is a good thing is 30% (the 2024 poll value).
+$$
+Ha:p>0.3
+$$
+
+Alternative hypothesis: The true proportion has increased since 2024. 
+
+Assumptions: the new sample with size n=350, and x=123 saying “good.” This is a representative random sample and each response is Bernoulli, so X∼Binomial(n,p). 
+
+```{r}
+# data
+x = 123
+n = 350
+p_null = 0.30
+
+# exact one-sided binomial test (H_a: p > p_null)
+binom.test(x, n, p = p_null, alternative = "greater")
+```
+The one-sided exact binomial p-value is 0.02174, which is less than 0.05. So we reject the null hypothesis (Ho). 
+
+Interpretation: If the true proportion was 0.30, the probability of observing 123 or more “good” responses in a random sample of 350 is about 2.17%. As this is very unlikely, the data provide evidence the true proportion is greater than 0.30.
+
+Conclusion: There is statistically significant evidence at the 5% level that the proportion of Canadians (18+) who think AI development is a good thing has increased since the 2024 poll’s 30% value.
+
+[^1]: https://www.ipsos.com/en-ca/34-percent-canadians-believe-development-ai-technologies-bad-thing-30-think-its-good
+
+
+**6.** (9 marks) As a budding data scientist with much promise, a person who is considering running as a Member of Parliament (MP) for a certain riding hires you to conduct some polling. Due to the time investment and the cost (time and finances) of a political campaign, you decide to take a random sample of $n = 38$ voters who live within this particular riding. Each are to be asked "if they would support this particular candidate if they ran as a reprsentative for Party X in the next federal election".  If your polling/sampling suggests that they will receive at least 50% of the vote, then you will council this person to "run for office". In your preliminary statistical work, you have decided that there is enough statistical evidence to support the "mimimum of 50%"-claim if out of $n = 38$ randomly chosen voters, at least 15 indicate they will vote for this candidate if they run. 
+
+(a) State the statistical hypotheses.
+Null hypothesis: candidate does NOT have majority support
+#Ho: p < 0.5
+
+Alternative hypothesis: candidate has at least 50% of the vote
+#Ha: p >= 0.5
+
+
+(b) Compute the value of $\alpha$ used in your derivation of the decision rule.
+```{r}
+n = 38
+threshold = 15
+p_null = 0.5
+
+# Probability of rejecting Ho when p = 0.5
+alpha = 1 - pbinom(threshold - 1, size = n, prob = p_null)
+alpha
+```
+
+
+(c) What if the candidate were to receive 42% of the vote. Compute the probability that you will conclude they should run for office. Interpret the meaning of this probability.
+
+```{r}
+p = 0.42
+
+prob_run = 1 - pbinom(threshold - 1, size = n, prob = p)
+prob_run
+```
+Interpretation: Even though the candidate only has 42% support, there is about a 68% chance our test will recommend they run. This shows the test is overestimates support below 50% (Type I error).
+
+(d) Repeat for (c) for these values of $p$: $p = 0.41, p = 0.40, p = 0.39, p = 0.38, p = 0.35$ and $p = 0.30$. For each differing value of $p$, compute the probability computed in part (c). THEN, create a plot with the differing values of $p$ on the $x$-axis and the probabilties computed on the $y$-axis. 
+
+```{r}
+p_values = c(0.41, 0.40, 0.39, 0.38, 0.35, 0.30)
+probabilities = sapply(p_values, function(p) 1 - pbinom(threshold - 1, size = n, prob = p))
+
+# probabilities
+data.frame(p_values, probabilities)
+
+# Plot
+plot(p_values, probabilities, type="b", pch=19, col="blue", xlab="True Proportion (p)", ylab="Probability Recommend Running", main="Probability of Recommending Candidate vs True Support")
+abline(h=0.5, lty=2, col="red") # reference line
+```
+
+
+(e) What does your plot/graph in part (d) tell you about your statistical test? How can you improve your test? Provide some suggestion(s), reasoning why each would make your statisical test better. 
+
+#The plot shows that even when true support is well below 50%, there is a high probability (up to ~64% for p = 0.41) that the test will recommend the candidate to run. This indicates the test is too liberal and overestimates support when it is actually below the majority, meaning it has a Type I error. To improve the test, I would increase the sample size, or use confidence intervals to make the decision more reliable. Increasing the sample size would reduce variability and decrease the chances of false recommendation. The confidence interval would only recommend running if lower bound > 50%.
+
+**7.** (4 marks) In 2019, an Angus Reid[^2] poll surveyed $n= 1000$ randomly chosen Canadians from which 561 supported a ban on singe-use plastics. More recently a pole (2024) by Oceana[^3] revealed that 82% of Canadians support the ban on single-use plastics. Assume that the sample size was 1200 for this study.
+</br>
+</br>
+
+(a) Compute *a* 95% confidence interval for $p_{2024} - p_{2019}$, the difference between the proportion of Canadians who recently support a ban on single-use plastics and the proportion of Canadians who supported such a ban in 2019.
+```{r}
+n1 = 1000; x1 = 561
+n2 = 1200; x2 = round(0.82 * n2)
+
+p1 = x1 / n1
+p2 = x2 / n2
+diff = p2 - p1
+
+# Standard error
+se = sqrt( (p1 * (1 - p1)) / n1 + (p2 * (1 - p2)) / n2 )
+
+# 95% CI
+z = 1.96
+ci_lower = diff - z * se
+ci_upper = diff + z * se
+
+# Output
+diff
+c(ci_lower, ci_upper)
+```
+
+
+(b) From your result in (a), can you infer there is a statistically significant difference between $p_{2024}$ and $p_{2019}$. Why or why not?
+Yes, the 95% CI does not include 0 and is above 0, so there is a statistically significant increase in the proportion supporting a ban from 2019 to 2024.
+ 
+
+[^2]:https://www.theglobeandmail.com/politics/article-majority-of-canadians-support-a-ban-on-single-use-plastics-poll/
+
+[^3]:https://oceana.ca/en/press-releases/tackling-plastic-pollution-is-a-non-partisan-issue-oceana-canada-poll-shows-vast-majority-of-canadians-still-support-banning-single-use-plastics/#:~:text=82%25%20of%20Canadians%20support%20the,the%20health%20impacts%20of%20plastics.
+
+</br>
+</br>
+
+**8.** (8 marks) Jim wonders how much cereal really appears in a box of his favourite cereal, Count Chocula. He randomly picks one box from each of 9 different supermarkets/grocery stores, purchases the desired cereal, then weighs the contents of each box. The content weight states on each box is 340 grams. **Is Jim receiving the amount of cereal that is stated on the box?** Carefully consider what the best alternative hypothesis would be in this scenario.
+</br>
+</br>
+The amount of cereal in each box, in grams, is provided below.
+
+$$
+331.1, 319.0, 329.2, 332.7, 333.7, 319.5, 327.0, 324.4, 343.5
+$$
+
+What do these data suggest? Ensure you address any conditions/assumptions you have made about these data. Also ensure you provide the $P$-value and interpret its meaning in the context of these data. In conducting your hypothesis use an $\alpha$ of 0.05.
+$$
+Ho:μ=340
+$$
+Null hypothesis: Jim received 
+$$
+Ha:μ<340
+$$
+Alternative hypothesis: Jim received less than 340 grams of cereal. 
+
+Assumptions: 
+1) The 9 boxes Jim bought are independent and randomly chosen.
+2) The weights of cereal boxes are approximately normally distributed 
+
+```{r}
+data = c(331.1,319.0,329.2,332.7,333.7,319.5,327.0,324.4,343.5)
+
+
+# Sample size, mean, standard deviation, and error
+n = length(data)
+xbar = mean(data)
+s = sd(data)
+se = s / sqrt(n)
+
+# Null hypothesis mean
+mu_null = 340
+
+# Test statistic (t)
+t_stat = (xbar - mu_null) / se
+
+# Degrees of freedom
+df = n - 1
+
+# One-sided p-value (H_A: mu < mu0)
+p_val = pt(t_stat, df = df)
+
+# 95% CI for the mean
+alpha = 0.05
+t_crit = qt(1 - alpha/2, df)
+ci = c(lower = xbar - t_crit * se, upper = xbar + t_crit * se)
+
+# Print
+n; xbar; s; se; t_stat; df; p_val; ci
+
+```
+
+Interpretation: The average of Jim’s nine boxes is 328.9 g, about 11.1 g less than the labeled 340 grams. The one-sided p-value (0.0012) is less than 0.05 (α), so we reject Ho in favor of Ha:μ<340. The test shows that it is very unlikely to be due to random sampling variability alone as the p-value is 0.0012.The 95% CI for the mean, (323.0, 334.8) grams, is below 340 g which shows that data values are all less than the labeled weight. In conclusion, Jim appears to be getting less cereal than the amount stated on the box.
+
+
+**9.** (8 marks) Let $x_{1}, x_{2}, \cdots, x_{8}$ represent data observed from a random sample of $n = 8$ taken from a population of values described by the following probability density function. 
+$$
+f(x_{i}; \beta) = e^{-(x_{i} - \beta)}  \hspace{0.5in} \beta \leq x_{i} < \infty 
+$$
+(Note: The notation $f(x_{i}; \beta)$ just represents that the density function depends on the value of the parameter $\beta$.
+</br>
+</br>
+This sample/data is used to test the following hypothesis:
+$$
+{\rm H}_{0}: \beta = 3 \hspace{0.5in} {\rm H}_{A}: \beta < 3
+$$
+A statistical test has been developed to test the validity of the above null hypothesis. This tests states the following: Reject the null hypothesis if the smallest data point in the sample, represented by $X_{Min}$, **is less than 3.018.** In other words, reject the null hypothesis if $X_{Min} < 3.018$. 
+</br>
+</br>
+The probability density function of this statistic $X_{Min}$ is provided:
+$$
+f(x_{Min}; \beta) = ne^{-n(x_{Min} - \beta)} \hspace{0.3in} \beta \leq x_{Min}
+$$
+
+(a) What value of $\alpha$ was used in the derivation of this statistical test? 
+
+```{r}
+n = 8
+beta_null = 3
+c_alpha = 3.018   
+alpha = 1 - exp(-n * (c_alpha - beta_null))
+alpha
+```
+ 
+
+(b) The data below are the observed values of the sample:
+$$
+3.21, 3.18, 3.28, 3.20, 3.14, 3.11, 3.21, 3.53
+$$
+Does this sample support the null hypothesis above? Explain your answer. (Note, the `sort` function will sort data points in ascending order.)
+
+```{r}
+data = c(3.21, 3.18, 3.28, 3.20, 3.14, 3.11, 3.21, 3.53)
+xmin = min(data)
+decision = ifelse(xmin < c_alpha, "Reject Ho", "Fail to reject Ho")
+
+xmin; decision
+```
+Since 3.11>3.018, we fail to reject null hypothesis. 
+
+(c) Revisiting the statistical test in (a), based on $n = 8$ and the found value of $\alpha$: compute the probability of concluding that $\beta = 3$ when in fact $\beta = 2.8$.
+
+```{r}
+beta_true = 2.8
+prob_fail = exp(-n * (c_alpha - beta_true))
+prob_fail
+```
+
+
+(d) In an attempt to decrease the probability of committing a Type II error, the value of $\alpha$ was increased from the value in (a) to 0.20. From a sample of $n = 8$ and a $\alpha = 0.20$, what value(s) of$X_{Min}$ would result in a rejection of the null hypothesis?
+```{r}
+alpha_new = 0.20
+c_new = beta_null - (1/n) * log(1 - alpha_new)
+c_new
+
+```
+
+
+**10.** (12 marks) A random sample of textbooks at the University of Calgary bookstore was obtained a few years ago. The price of a used textbook was observed at both the U of Calgary bookstore and on Amazon.ca. The data can be found in the following [file](https://github.com/Statman44/Data602/blob/main/bookprices.csv). 
+**Note:** To read this bookprices.csv file into R, select the *Raw* option appearing on the top right-hand side in the link above. Then, copy-paste the resulting URL into your `read.csv("")` command. 
+
+(a) Can you conclude that the price of a used textbook at the University of Calgary Bookstore is more when compared to the price of a used text book on Amazon.ca? in your summary and analysis, ensure you address your statistical hypotheses. Report and interpret the $P$-value. 
+```{r}
+book = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/bookprices.csv")
+
+diff <- book$UsedBkStore - book$UsedAmazon
+
+# (a) Paired one-sample t-test (alternative: bookstore price higher)
+t_test_result <- t.test(diff, mu=0, alternative="greater")
+t_test_result
+```
+
+Since the p-value (0.00445) is less than α=0.05, we reject the null hypothesis Ho:μDiff =0. This provides strong evidence that the mean price of a used textbook at the University of Calgary bookstore is higher than on Amazon.ca. On average, books are about $25.47 more expensive at the bookstore.
+
+(b) The test you applied in part (a) requires a condition/assumption. Create the necessary data visualization that will check this assumption/condition. Comment on if this condition/assumption appears to hold.
+```{r}
+hist(diff, main="Histogram of Price Differences", xlab="UsedBkStore - UsedAmazon")
+qqnorm(diff)
+qqline(diff, col="red")
+```
+The histogram of differences is roughly symmetric, and the points in the Q-Q plot lie along the straight line. Therefore, the normality assumption for the paired t-test appears to hold. 
+
+
+(c) Compute a 95% confidence interval for mean difference in used book prices between the University of Calgary bookstore and Amazon.ca. Interpret the meaning of this interval in the context of these data. 
+```{r}
+t_test_result <- t.test(diff, mu=0, alternative="greater", conf.level=0.95)
+t_test_result$conf.int  
+```
+We are 95% confident that the true mean price difference (Bookstore − Amazon) is at least $10.69. Since the entire interval is above 0, this shows that bookstore prices are higher than Amazon prices. 
+
+
+

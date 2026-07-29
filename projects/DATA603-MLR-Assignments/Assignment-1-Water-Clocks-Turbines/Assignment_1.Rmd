@@ -1,0 +1,283 @@
+---
+title: "Assignment 1"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+## First order Model with Interaction Term (Quantitative Variables)
+
+Deadline: November 2, 2025, by 11:59 pm. Submit to Gradescope Link in assignment 1 folder
+
+&copy; Thuntida Ngamkham 2025
+
+**Problem 1:15 marks)** The amount of water used by the production facilities of a plant varies. Observations on water usage and other, possibility related, variables were collected for 250 months. The dataset is given below.
+
+```{r}
+water=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/water.csv")
+water
+```
+
+The explanatory variables are
+
+TEMP= average monthly temperature (degree celsius)
+
+PROD=amount of production (in hundreds of cubic)
+
+DAYS=number of operationing day in the month (days)
+
+HOUR=number of hours shut down for maintenance (hours)
+
+The response variable is USAGE=monthly water usage (gallons/minute)
+
+**1.1 (2 marks)** Fit the model containing all four independent variables. What is the estimated multiple regression equation?
+```{r}
+full <- lm(USAGE ~ TEMP + PROD + DAYS + HOUR, data = water)
+summary(full)
+coef(full)   
+```
+Equation: USAGE=5.8916+0.1687TEMP+0.04021PROD−0.02162DAYS−0.07099HOUR
+For every 1°C increase in TEMP, USAGE increases by 0.1687 gallons/min
+For every 1 unit increase in PROD, USAGE increases by 0.04021 gallons/min
+For every additional HOUR of shutdown, USAGE decreases by 0.07099 gallons/min
+DAYS has a small negative effect
+
+**1.2 (3 marks)** Test the hypothesis for the full model i.e the test of overall significance. Use significance level 0.05. Ensure that you include the hypotheses, p-value, and conclusion.
+Ho:βTEMP=βPROD=βDAYS=βHOUR=0 
+Ha:At least one βj does not equal 0 
+```{r}
+anova(full) # ANOVA table 
+summary(full)$fstatistic 
+```
+F(4,244) = 486.02, p-value < 2.2×10-16
+Since p-value < 0.05, we reject H0
+The model is statistically significant.
+
+**1.3 (2 marks)** Would you suggest the model in part b for predictive purposes? Which model or set of models would you suggest for predictive purposes? Hint: Use Individual Coefficients Test (t-test) to find the best model. Make sure you provide your hypotheses, p-value(s), and final model.)
+```{r}
+summary(full)       
+reduced1 <- lm(USAGE ~ TEMP + PROD + DAYS, data = water)
+summary(reduced1)
+```
+DAYS is not significant
+Ho:βDAYS=0
+Ha:βDAYS=0 p=0.502>0.05 → Fail to reject Ho (remove DAYS)
+I would use this model: USAGE=3.8122+0.18169TEMP+0.04443PROD
+
+**1.4 (2 marks)**  Use Partial $F$ test to confirm that the independent variable (removed from part c) should be out of the model at significance level 0.05. Ensure that you include the hypotheses, p-value, and conclusion.
+Ho:βDAYS=0(reduced model is okay) 
+Ha:βDAYS=0
+
+```{r}
+anova(reduced1, full) 
+```
+F=0.3492, p = 0.5551 
+p> 0.05 so we Fail to reject Ho
+So removing DAYS does not significantly reduce model fit (DAYS should be removed). 
+
+**1.5 (2 marks)**  Obtain a 95% confidence interval of regression coefficient for TEMP from the model in part c. Give an interpretation. 
+```{r}
+confint(reduced1, "TEMP", level = 0.95)  
+```
+We are 95% confident that for each 1°C increase in TEMP, monthly water usage increases by 0.166 to 0.197 gallons/min, holding the amount of production (PROD) constant.
+
+**1.6 (2 marks)**  Use the method of Model Fit to calculate $R^2_{adj}$ and RSE to compare the full model in part a and the model in part c. Which model or set of models would you suggest for predictive purpose? For the final model, give an interpretation of $R^2_{adj}$ and RSE.
+```{r}
+s_full <- sigma(full)
+r2_full <- summary(full)$r.squared
+adjr2_full <- summary(full)$adj.r.squared
+
+# reduced
+s_red <- sigma(reduced1)
+r2_red <- summary(reduced1)$r.squared
+adjr2_red <- summary(reduced1)$adj.r.squared
+
+# print
+data.frame(model = c("full","reduced"),
+           RSE = c(s_full, s_red),
+           R2 = c(r2_full, r2_red),
+           AdjR2 = c(adjr2_full, adjr2_red))
+```
+Full model explains slightly more variation as higher adjusted r-squared value. 
+Full model has lower error (lower RSE).   
+So the full model performs better for prediction, and HOUR is significant (so we keep HOUR). 
+
+**1.7 (2 marks)**  Build an interaction model to fit the multiple regression model from the model in part f. From the output, which model would you recommend for predictive purposes? Be sure to explain your process. 
+
+Model: USAGE∼(TEMP+PROD+DAYS)^2
+```{r}
+interact_all <- lm(USAGE ~ (TEMP + PROD + DAYS)^2, data = water)  
+summary(interact_all)
+
+coef(summary(interact_all)) 
+
+anova(reduced1, interact_all)  
+```
+Only TEMP:PROD interaction is significant: p-value < 2e-16
+Partial F-test comparing additive vs interaction: F = 84.22, p < 2.2e-16
+So include the TEMP × PROD interaction → performance improves substantially.
+
+USAGE=7.805+0.0764TEMP+0.0126PROD−0.00179TEMP⋅DAYS+0.001032TEMP⋅PROD+0.000276PROD⋅DAYS
+(TEMP:PROD is very significant so we keep main effects). The effect of temperature on water usage depends on production level. So when production increases, the slope relating TEMP to USAGE becomes steeper.  
+------------------------------------------------------------
+
+**Problem 2:20 marks)**. A collector of antique grandfather clocks sold at auction believes that the price received for the clocks depends on both the age of the clocks and the number of bidders at the auction. Thus, (s)he hypothesizes the first-order model
+
+
+$$
+\begin{aligned}
+y &= \beta_0 + \beta_1X_1+\beta_2X_2 +\epsilon\\
+where\\
+y &= \mbox{Auction price (dollars)}\\
+X_1 &= \mbox{Age of clock (years)}\\
+X_2 &= \mbox{Number of bidders}
+\end{aligned}
+$$
+A sample of 32 auction prices of grandfather clocks, along with their age and the number of bidders, is given in data file below
+
+
+
+```{r}
+gfclocks=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/GFCLOCKS.csv")
+gfclocks
+```
+
+**2.1 (2 marks)**  Use the method of least squares to estimate the unknown parameters $\beta_0$, $\beta_1$, $\beta_2$ of the model.
+```{r}
+m2 <- lm(PRICE ~ AGE + NUMBIDS, data = gfclocks)
+summary(m2)
+coef(m2)
+```
+PRICE = −1338.95+12.74(AGE)+85.95(NUMBIDS)
+For each year of age, price increases by $12.74, holding bidders constant.
+For each bidder, price increases by $85.95, holding age constant.
+
+**2.2 (2 marks)** Find the value of SSE that is minimized by the least squares method.
+```{r}
+anova(m2) 
+```
+The value of SSE is 516727 that is minimized by the least squares method.
+
+
+**2.3 (2 marks)** Estimate $s$, the standard deviation of the model, and interpret the result.
+```{r}
+s <- sigma(m2)   # residual SE
+s
+```
+Observed auction prices typically differ from model-predicted prices by about $133.48.
+
+**2.4 (2 marks)**  Find and interpret the adjusted coefficient of determination, $R^2_{Adj}$.
+```{r}
+adjR2 <- summary(m2)$adj.r.squared
+adjR2
+```
+About 88.49% of the variation in auction price is explained by age and number of bidders.
+
+**2.5 (4 marks)**  Construct the ANOVA table for the model and test the global F-test of the model at the  $\alpha$ = 0.05 level of significance. Be sure to state your hypotheses, p-values, provide the ANOVA table and make a conclusion.
+Ho:β1 =β2=0(neither AGE nor NUMBIDS predicts PRICE) 
+Ha:at least one βj does not equal 0
+```{r}
+anova(m2)
+summary(m2) 
+```
+Since p<0.05, reject Ho. The model is statistically significant.
+
+**2.6 (3 marks)**  Test the hypothesis that the mean auction price of a clock changes as the number of bidders increases when age is held constant (i.e., when  $\beta_2\neq0$). (Use $\alpha$ = 0.05 )
+Ho:β2=0
+Ha:β2 does not equal 0
+```{r}
+coef(summary(m2))["NUMBIDS", c("Estimate","Std. Error","t value","Pr(>|t|)")]
+```
+p<0.05 so we reject Ho. Number of bidders significantly affects price after accounting for age.
+
+**2.7 (2 marks)**  Find a 95% confidence interval for $\beta_1$ and interpret the result.
+```{r}
+confint(m2, "AGE", level = 0.95)
+```
+We are 95% confident that each extra year of age increases auction price by between $10.89 and $14.59, holding bidders constant.
+
+**2.8 (3 marks)**  Test the interaction term between the 2 variables at $\alpha = .05$. What model would you suggest to use for predicting y? Explain.
+```{r}
+m2_int <- lm(PRICE ~ AGE * NUMBIDS, data = gfclocks)
+summary(m2_int)
+coef(summary(m2_int))["AGE:NUMBIDS", c("Estimate","Std. Error","t value","Pr(>|t|)")]   # Test interaction coefficient
+anova(m2, m2_int)  # Compare additive vs interaction with partial F
+```
+p interaction=1.35×10−6 < 0.05
+The AGE × NUMBIDS interaction is statistically significant. Therefore, the interaction model should be used for prediction: PRICE∼AGE∗NUMBIDS The effect of age on price depends on number of bidders.
+---------------------------------------------------
+
+**Problem 3:18 marks**. __Cooling method for gas turbines.__  Refer to the Journal of Engineering for Gas Turbines and Power (January 2005) study of a high pressure inlet fogging method for a gas turbine engine. The heat rate (kilojoules per kilowatt per hour) was measured for each in a sample of 67 gas turbines augmented with high pressure inlet fogging. In addition, several other variables were measured, including cycle speed (revolutions per minute), inlet temperature (degree Celsius), exhaust gas temperature (degree Celsius), cycle pressure ratio, and air mass flow rate (kilograms per second). The data are saved in the __TURBINE.CSV__ file.
+
+![The first and last five observations are listed in the table.](C:/Users\Thuntida\OneDrive - University of Calgary\dataset603\question3.png
+```{r}
+turbine=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/TURBINE.csv")
+turbine
+```
+
+
+**3.1 (2 marks)** Write a first-order model for heat rate (y) as a function of speed, inlet temperature, exhaust temperature, cycle pressure ratio, and air flow rate.
+
+```{r}
+m3_full <- lm(HEATRATE ~ RPM + INLET.TEMP + EXH.TEMP + CPRATIO + AIRFLOW, data = turbine)
+summary(m3_full)
+```
+HEATRATE=β0 + β1(RPM)+β2(INLET.TEMP)+β3(EXH.TEMP)+β4(CPRATIO)+β5(AIRFLOW)+ϵ
+HEATRATE= 13610+0.08879(RPM)−9.201(INLET.TEMP)+14.39(EXH.TEMP)+0.3519(CPRATIO)−0.8480(AIRFLOW)
+
+**3.2 (3 marks)** Test the overall significance of the model using $\alpha=0.01$ Be sure to state your hypotheses, p-values, and conclusion.
+Ho:β1=β2=β3=β4=β5=0 
+Ha:At least one βj does not equal 0
+F(5,61)=147.3 p-value: < 2.2 × 10^-16 so we reject Ho 
+The regression model is statistically significant at alpha= 0.01.
+
+**3.3 (2 marks)** Fit the best additive model to the data using the method of least squares. Test significance of predictors at $\alpha = 0.06$.Be sure to state your hypotheses, p-values, and conclusion.
+CPRATIO p-value>0.06 so we will remove. We will keep the other variables as p-value<0.06. 
+
+Best model: HEATRATE∼RPM+INLET.TEMP+EXH.TEMP+AIRFLOW
+```{r}
+m3_add <- lm(HEATRATE ~ RPM + INLET.TEMP + EXH.TEMP + AIRFLOW, data=turbine)
+summary(m3_add)
+```
+
+**3.4 (3 marks)**   Test all possible interaction terms for the best model in part (c) at $\alpha = .06$. What is the final model would you suggest to use for predicting y? Explain.
+```{r}
+m3_int <- lm(HEATRATE ~ (RPM + INLET.TEMP + EXH.TEMP + AIRFLOW)^2, data=turbine)
+anova(m3_add, m3_int)
+```
+Ho :No interaction terms are needed 
+Ha:At least one interaction term improves the model
+F = 4.4156, p-value = 0.00101
+Since p<0.06 we reject Ho. 
+So model: HEATRATE∼(RPM+INLET.TEMP+EXH.TEMP+AIRFLOW)^2
+
+
+**3.5 (2 marks)**  Give practical interpretations of the $\beta_i$ estimates. 
+additive model: HEATRATE ~ RPM + INLET.TEMP + EXH.TEMP + AIRFLOW
+For every increase of 1 RPM, heat rate increases by about 0.0888 kJ/kW/hr, keeping other variables constant. 
+For every 1°C increase in inlet temperature, heat rate decreases by about 9.19 kJ/kW/hr, holding others constant. 
+An large inlet temperature improves the efficiency. 
+For every 1°C increase in exhaust temperature, heat rate increases by about 14.36 kJ/kW/hr → worse efficiency. 
+For every 1 kg/s increase in air flow, heat rate decreases by about 0.85 kJ/kW/hr (slight efficiency improvement).
+
+**3.6 (2 marks)** Find RSE, $s$ from the model in part (d)
+Residual standard error: 455.1
+The typical prediction error is about 455.1 kJ/kW/hr.
+
+**3.7 (2 marks)**  Find the adjusted-R2 value from the model in part (d) and interpret it.
+Adjusted R-squared: 0.9186
+91.86% of the variation in heat rate is explained by the model.
+This means the model fits the data very well.
+
+**3.8 (2 marks)**  Predict a heat rate (y) when a cycle of speed = 273,145 revolutions per minute,  inlet temperature= 1240 degree celsius, exhaust temperature=920 degree celsius, cycle pressure ratio=10 kilograms persecond, and air flow rate=25 kilograms persecond.
+```{r}
+newdata <- data.frame(RPM = 273145,
+                      INLET.TEMP = 1240,
+                      EXH.TEMP = 920,
+                      AIRFLOW = 25)
+predict(m3_add, newdata)
+```
+The model predicts the heat rate will be about 39680 kJ/kW/hr.
+
+---------------------------------------------------

@@ -1,0 +1,561 @@
+---
+title: "Data 602 - Assignment One"
+output:
+  html_notebook:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "Due Sunday, September 14, 2025 @ 11:59pm"
+---
+  html_notebook:
+    
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(mosaic)
+require(mosaicData)
+# studentsurvey = read.csv("Z:\\Data305\\Stat213StudentSurvey.csv")
+# attach(studentsurvey)
+#library(dplyr)
+#install.packages("nycflights13")
+library(nycflights13)
+
+```
+
+Attempt all problems below. You will be required to complete this assignment in R Notebook or R Markdown, and submit then submit a .pdf file (Preview -> Knit to PDF) to the Assignment One in gradescope.ca. To submit your assignment, click on the submission link in the D2L folder.
+</br>
+</br>
+Ensure you show all relevant work, either with a series of steps in LaTeX or with R-code/code in R chunks. Use at least four decimal places in your probability computations. 
+</br>
+</br>
+All assignment submission files to Gradescope need to be in a .pdf format. If for some reason you have issues knitting your .Rmd document to a .pdf, then knit your document to a .html file, and then convert your .html file to a .pdf document. How? Just do a google-search...there are many, many different web portals that will allow you to drop your .html file into a window, convert your .html file to a .pdf, and download the .pdf. Your submission must be multiple pages, not one long page. PDFs that are submitted as one long page will receive a grade of 0. 
+</br>
+</br>
+
+**1.**  (**4 marks**) A recent Angus Reid study[^1] found that 43% of Canadians aged 18 to 29 support having one year of mandatory military service for people under 30. For the purposes of this analysis, we will assume that the true proportion of all Canadians in this age group who support this policy is 43%.
+
+One randomly selects two Canadians with ages between 18 and 29. Compute the probability that 
+
+(a) At least one of the two supports having one year of mandatory military service for people under 30.
+```{r}
+p=0.43
+prob_at_least_one = 1 - (1 - p)^2
+prob_at_least_one 
+```
+
+(b) Neither supports having one year of mandatory military service for people under 30.
+```{r}
+prob_neither = (1 - p)^2
+prob_neither 
+```
+
+(c) Suppose you randomly select $n$-Canadians between ages 18 and 29 so that the probability that *at least one of them* supports having one year of mandatory military service for people under 30 is 0.95. Compute the minimum number of Canadians between ages 18 and 29 you would have to randomly select. In other words, compute the *sample size* $n$. (Hint: $ln(a^{b}) = b* ln(a)$...)
+</br>
+```{r}
+target = 0.95
+n_min_exact = log(1 - target) / log(1 - p)
+n_min = ceiling(n_min_exact)
+
+n_min_exact  
+n_min        # the smallest n
+```
+
+</br>
+
+[^1]:(https://angusreid.org/mandatory-military-civilian-service-youths-canada/)
+
+**2.** **(3 marks)** For Question 2, you will be doing a simulaiton of a fair-die toss. Before you solve the problem, try this sample simulation, and use the code to answer question 2.
+
+Toss a fair-die 1000 times then compute the sum of the 1000 tosses. For example, ${\cal S} = \{Toss1, Toss2, \cdots, Toss1000 \}$. Then $\sum_{i = 1}^{1000}Toss_{i} = ?$  
+</br>
+
+#### Step 1: Create a series of vectors to hold output
+
+Create an R chunk and type the R code appearing below. You can exclude the documentation. 
+
+```{r echo=TRUE}
+nsims = 1000  # the number of simulations
+outcome = numeric(nsims) #create empty vector that will be filled with numeric outcomes
+```
+
+</br>
+
+#### Step 2: Run the Simulation
+
+This step requires that we create a *loop*. There are many types of loops in R, a *while* loop, and a *for* loop. We will be using a for-loop here. Create another R chunk and type the following text (again, you do not need to type the documentation). **ENSURE** the body of the for-loop is wrapped with a open curly bracket $\{$ and a closed curly-bracet $\}$!
+
+```{r echo=TRUE}
+for(i in 1:nsims){ #we are going to perform the body of the loop 1000 times
+  outcome[i] = sample(c(1,2,3,4,5,6), 1, replace=FALSE) #stores the outcome of the ith toss in position i of outcome
+  }  #close the for-loop
+simresult = data.frame(outcome) #creates a data frame with two columns
+head(simresult,3)  #shows the first three rows of the data frame, outcome of each die toss in column 2
+tail(simresult,3)  #shows the last three rows of the data frame, die toss outcome in column 2
+```
+</br>
+
+#### Step 3: Visualize the Simulation with `ggplot2`
+
+You will need the `ggplot2` package for Step 3. 
+
+</br>
+Below you will visualize the result of your 1000 simulated tosses of the fair die, via a histogram, from which you will take particular notice of the distribution of the outcome of each number 1 through 6. Is this distribution consist with your initial idea(s) about the random variable $X =$ number of dots appearing on the top-side/uppermost face? 
+
+```{r eval=FALSE, include=FALSE}
+sum(simresult$outcome)  #computes the sum of the 1000 tosses appearing in the outcome variable of simresult data frame
+ggplot(data=simresult, aes(x = outcome)) + geom_histogram(binwidth=1, fill='red', col='black') + ggtitle("Distribution of Uppermost Face") #creates a bar graph of outcomes
+```
+</br>
+
+#### Step 4: Using Simulation to Compute a Probability
+
+In this step, you are going to take the simulation of a die toss done *3000* times and use the results to compute the probability that the outcome of the die toss is either a 5 or a 6. Revisit your code in your last R chunk, and *add* the following to the pre-amble of the for-loop
+
+</br>
+```{r}
+nsims = 3000
+outcome = numeric(nsims)
+fivesix = numeric(nsims)
+```
+</br>
+
+Now, within the body of the for-loop, add the code *after* the line that consists of outcome[i]:
+</br>
+</br>
+<center>
+<center> **fivesix[i] = if (outcome[i] == 5 || outcome[i] == 6) 1 else 0** 
+</br>
+</br>
+</center>
+
+This code instructs R to look at each outcome. *If* the simulated die roll is equal to a 5 *or* a 6 (or is indicated by ||), then the roll is assigned a value of 1, otherwise (*else*) the roll is not counted (or counted as 0).
+</br>
+</br>
+
+```{r echo=TRUE}
+for(i in 1:nsims){ 
+  outcome[i] = sample(c(1,2,3,4,5,6), 1, replace=FALSE) 
+  fivesix[i] = if (outcome[i] == 5 || outcome[i] == 6) 1 else 0
+  }  
+simresult = data.frame(outcome, fivesix) 
+head(simresult,3)  
+tail(simresult,3) 
+```
+
+**After you have finished the sample simulation, here is the inquiry for Question 2** **(3 marks)**: 
+
+Rather than a single trial result from the outcome of a simulated die toss, suppose a trial consisted of the three die tosses. An element in the sample space $o_{i} = (toss1, toss2, toss3)$. Moreover, on each trial you wish to observe if the sum of the three tosses is 14 or more. For example, a $(5,6,3)$ outcome sums to 14 and satisfies the condition $sum \geq 14$. You wish to estimate the probability of observing a sum of 14 or more when three fair die are tossed. Run 3000 simulations.
+</br>
+</br>
+Make appropriate changes to the your last chunk of R code to compute $P(Sum\:\geq 14)$. You are not required to include the commands **head(dataframe, no. rows to diplay)** nor **tail(dataframe, no.rows to display)**. This is for your sake, so you get a chance to see if the output is what you want - AKA your code works. 
+</br>
+</br>
+
+```{r}
+nsims = 3000                
+sumge14 = numeric(nsims)    
+
+for(i in 1:nsims){
+  o_i = sample(c(1,2,3,4,5,6), 3, replace = TRUE)
+  sumge14[i] = if(sum(o_i) >= 14) 1 else 0
+}
+
+# Estimated probability 
+prob_sum_ge_14 = mean(sumge14)
+prob_sum_ge_14
+
+```
+
+**3.**  **(3 marks)**  An abbreviated deck of 20 cards consists of four suits ($\heartsuit, \diamondsuit, \spadesuit, \clubsuit$) and the following denominations
+(10, Jack, Queen, King, Ace). You pick at random five cards, or a `hand', without replacement. 
+(a) Compute the probability your hand will consist of a 10, Jack, Queen, King, and Ace of the *same suit*. One example of such a hand is: $(10\heartsuit, J\heartsuit, Q\heartsuit, K\heartsuit, Ace\heartsuit)$. 
+```{r}
+total_hands = choose(20, 5)
+straight_flush = 4
+prob_a = straight_flush / total_hands
+prob_a
+```
+
+(b) Compute the probability that you get a full house?. That is a hand that has 3 cards of the same rank, and 2 cards of another rank. For example, (10$\heartsuit$, 10$\diamondsuit$, 10$\spadesuit$, J$\clubsuit$, J$\heartsuit$).
+
+```{r}
+full_house = 5 * choose(4,3) * 4 * choose(4,2)
+prob_b = full_house / total_hands
+prob_b
+```
+
+(c) Compute probability that one observes two Aces and two $\spadesuit$'s. 
+```{r} 
+two_aces = choose(4,2)
+two_spades = choose(4,2)  
+remaining = choose(16,1)  
+hands_choose = two_aces * two_spades * remaining
+prob_c = hands_choose / total_hands
+prob_c
+```
+
+
+</br>
+</br>
+
+**4.** **(3 marks)** An oil and gas executive needs to fly from Calgary, Alberta (airport code YYC) to Washington-Dulles (airport code IAD) to attend a meeting with lobbyists about the building of a certain pipeline. Because there is no direct flight from YYC to IAD, this traveller has fly from YYC to a different city, then connect with a flight to IAD. The traveler has airline options. Airline AA will connect through Dallas, Airline UA will connect through Chicago, or Airline D which connects through Minneapolis-St.Paul. Taking into their past experiences with flying with the three airlines in question, this executive hints that the probability of flying with Airline AA is 0.20. The probability they will fly with Airline D is three times more than the probability of flying with Airline UA. Historical data has shown that 20% of passengers who fly with Airline AA miss their connecting flights in Dallas. Similarly, 15% of Airline D passengers and 25% of Airline UA passengers miss their connecting flights.
+
+The executive has called the office of the lobby-group to say they have missed their connecting flight. Compute the probability that the executive called from Chicago (or is flying Airline UA).
+
+</br>
+```{r}
+# probabilities
+P_AA = 0.20
+# Let P_UA = x, then P_D = 3*x
+# Total probability must equal to 1: P_AA + P_UA + P_D = 1
+# Substitute: 0.20 + x + 3x = 1
+# Simplify: 4x = 0.80
+# Solve for x (P_UA): x = 0.20 
+P_UA = 0.20
+P_D  = 3 * 0.20
+
+# Probabilities of missing the connection
+P_miss_AA = 0.20
+P_miss_UA = 0.25
+P_miss_D  = 0.15
+
+# Total probability of missing the connection (Law of Total Probability)
+P_miss = P_miss_AA*P_AA + P_miss_UA*P_UA + P_miss_D*P_D
+
+# Probability that the executive was on UA given that they missed the connection (Bayes' Theorem)
+P_UA_Miss = (P_miss_UA * P_UA) / P_miss
+P_UA_Miss
+```
+</br>
+
+**5.** **(5 marks)** A random variable $X$ has the following probability distribution function
+
+$$
+P(X = x) = \frac{4}{5^{x + 1}} \hspace{0.5in} x = 0, 1, 2, \cdots
+$$
+
+(a) Using R Studio, create a display that shows the probability distribution of this particular random variable $X$. Refer to the various code provided for examples appearing in Probability Module 4. For values of x, use **xvalues = 0:20**.
+
+```{r}
+xvalues = 0:20
+prob_X = function(x) {4 / 5^(x + 1)}
+px = prob_X(xvalues)
+
+prob_dist = data.frame(x = xvalues, P_X = px)
+prob_dist
+
+curve(prob_X, from = 0, to = 20, xlab = "Values of X", ylab = "Density f(x)", main = "Distribution of X", col = "red", lwd = 2)
+```
+
+
+(b) How likely is it to observe values beyond 3? Compute $P(X > 3)$. 
+```{r}
+P_X_gt3 = sum(px[xvalues > 3])
+P_X_gt3
+```
+
+
+(c) Compute the mean or expected value of $X$, $E(X)$ or $\mu_{X}$. (Hint: In computing $E(X)$, change the upper limit on x from 20 to 100...)
+```{r}
+xvalues_large = 0:100
+px_large = 4 / (5^(xvalues_large + 1))
+E_X = sum(xvalues_large * px_large)
+E_X
+```
+
+
+(d) Compute the standard deviation of $X$, $SD(X)$ or $\sigma_{X}$. (use the same values of $x$ as you did in part (c)) 
+```{r}
+Var_X = sum((xvalues_large - E_X)^2 * px_large)
+SD_X = sqrt(Var_X)
+SD_X
+```
+
+
+(e) Consider the interval $(\mu_{X} - \sigma_{X}, \mu_{X} + \sigma_{X})$. Compute $P(\mu_{X} - \sigma_{X} < X < \mu_{X} + \sigma_{X})$.
+</br>
+```{r}
+lower = E_X - SD_X
+upper = E_X + SD_X
+P_within1SD = sum(px_large[xvalues_large >= lower & xvalues_large <= upper])
+P_within1SD
+```
+
+</br>
+
+**6.** **(3 marks)** Angus Reid[^2] released the results of a July 2025 poll showing that 47% of Canadian voters (based on a sample of 1,500) support a law to prevent "metre-long ballots" in future elections. A "metre-long ballot" refers to a ballot with an unusually large number of candidates—for example, one riding in Ontario had 91 candidates listed. For this problem, assume that 47% of all Canadian voters support such a law.
+
+You are to randomly pick $n = 50$ Canadian voters and ask each their sentiments. You observe that 35 of them support a law to prevent "metre-long ballots" in future elections. 
+
+(a) How likely is this outcome? Compute. 
+```{r}
+n = 50
+p = 0.47
+x = 35
+
+P_X_35 = dbinom(x, size=n, prob=p)
+P_X_35
+```
+
+
+(b) From your computation in part (a), do you think of the "47% statistic" quoted above is accurate or inaccurate? Ensure you use probability theory in your explanation. 
+
+#Probability is so small that it is very unlikely that this sample would occur if the true proportion were 47%.Expected number of supporters: E[X]=n⋅p=50⋅0.47=23.5(round figure 24 supporters). Observing 35 supporters which is far above 24 supporters. So the probability of this happening: P(X=35)≈0.00055 is very tiny.
+
+(c)  Suppose you are to randomly inspect $n$-Canadian voters on this issue until you find the 10th to say they support a law to prevent "metre-long ballots" in future elections. Compute the probability that $n = 30$.
+
+[^2]:(https://angusreid.org/long-ballot-poilievre-longest-ballot-committee-electoral-reform/)
+</br>
+```{r}
+k = 10
+n = 30
+p = 0.47
+
+P_Y_30 = choose(n-1, k-1) * p^k * (1-p)^(n-k)
+P_Y_30
+```
+
+</br>
+
+**7.** **(3 marks)** You and five friends decide to play "Odd Person Out". In this game, the six of you each toss a fair coin. The person who throws the *odd outcome* has to pay for the next round of drinks/coffee/kombutcha/whatever-you-all-fancy. For example, if one person flips a head while the other five flips tails, then the person who flipped the head has to pay for all six, and vice versa. Should such an outcome not occur, everyone flips again *until* the "odd person out" occurs. Presuming all six toss a fair coin, the random variable $X$ that counts the number of tosses needed to observe "odd person out" is given by
+$$
+P(X = x) = \left(0.8125\right)^{x -1}\left(0.1875 \right) \hspace{0.5in} x = 1, 2, 3, 4, \cdots
+$$
+
+It has taken 10 rounds to observe "odd person out", or $X = 10$. Did it take more trials than expected to observe "odd person out" or less? Ensure you incorporate course content in your explanation. 
+</br>
+```{r}
+p = 0.1875     
+x_obs = 10     
+
+# Expected and standard deviation 
+expected = 1 / p
+variance = (1 - p) / (p^2)
+sd = sqrt(variance)
+
+# Difference from mean (z-score)
+z_score = (x_obs - expected) / sd
+
+# Probability of exactly 10 trials
+p_exact = dgeom(x_obs - 1, prob = p)
+
+# Probability of taking at least 10 trials
+p_ge_10 = pgeom(x_obs - 1, prob = p, lower.tail = FALSE)
+
+# list 
+list(
+  expected = expected,
+  standard_deviation = sd,
+  observed = x_obs,
+  z_score = z_score,
+  P_X_eq_10 = p_exact,
+  P_X_ge_10 = p_ge_10
+)
+```
+
+#The expected number of rounds is 5.33 with a standard deviation of 4.81. It took 10 rounds, which is about 0.97 standard deviations above the mean. The chance of getting exactly 10 rounds is only 2.89%, but the chance of needing 10 or more rounds is 12.5%, which is not rare. So, while 10 rounds is more than expected, it is still well within the normal range of variation for a geometric distribution and is not unusually high.
+
+</br>
+
+**8.** **(5 marks)** In a certain beverage manufacturer's factory, an automated soft-drink filling machine is to fill 2-litre bottles with product, the amount of soft-drink slightly varying from one 2-litre bottle to the next in according with a *Normal probability model* with a mean of $\mu = 1.93$ litres and a standard deviation of $\sigma = 0.07$ litres.
+
+(a) You are to randomly pick a 2-litre bottle off the production line and measure its contents. Compute the probability that the amount of soft-drink dispensed into this bottle is between 1.80 and 1.97 litres.
+```{r}
+mu = 1.93
+sigma = 0.07
+p_a= pnorm(1.97, mean = mu, sd = sigma) - pnorm(1.80, mean = mu, sd = sigma)
+p_a
+```
+(b) Find the 80th-percentile and interpret is meaning in the context of these data.
+```{r}
+x80 = qnorm(0.80, mean = mu, sd = sigma)
+x80
+```
+
+
+(c) What proportion of *all* 2-litre bottles will be filled to overflow?
+```{r}
+p_c = 1 - pnorm(2.00, mean = mu, sd = sigma)
+p_c
+
+```
+
+
+(d) You are to randomly pick 50 2-litre bottles for inspection, measuring the amount of product dispensed into each of the bottles. Compute the probability that between 5 and 10 of these bottles will have less than 1.85 litres of soft-drink.
+```{r}
+p = pnorm(1.85, mean = mu, sd = sigma)  # single-bottle probability
+p_d = sum(dbinom(5:10, size = 50, prob = p))
+p_d
+```
+
+</br>
+</br>
+
+**9.** **(6 marks)** The data file [GSS2002.csv](https://raw.githubusercontent.com/Statman44/Data602/main/GSS2002.csv) consists of data resulting from the General Social Suvery (GSS) that tracks various demographic, characteristics, and views on social and political issues since the early 1970s. This file can be imported into R with the following command
+
+```{r}
+gss = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/GSS2002.csv")
+```
+
+
+This data set consists of a various categorical variables. You can run the **head(gss, # of rows to see)** command to inspect the different variable names. Or, the command **columnnames(gss)** will return the names of the different columns/variables. To determine the different values that are possible on a certain categorical variable, the command **levels(dataframename$variablename)** will return the different values. 
+
+## A Brief Tutorial on Bar Graphs
+
+For example, consider the variable "Religion" which provides income classes that each respondent falls into. A bar-graph of this variable is created below using the code presented below. I have included a "non-sorted" bar graph as a comparater. 
+
+```{r echo=TRUE}
+ggplot(data=gss, aes(x = Religion, fill=Religion)) + geom_bar(position="dodge", na.rm=TRUE) + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+counts = as.data.frame(sort(table(gss$Religion)))
+# head(counts, 4)
+ggplot(data=counts, aes(x=Var1, y=Freq, fill=Var1)) + geom_bar(stat="identity") + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+reliprop = counts$Freq/sum(counts$Freq) #converts counts to proportions
+counts1 = data.frame(counts, reliprop) #create a new data frame adding reliprob variable to counts
+# head(counts1, 4)
+ggplot(data=counts1, aes(x=Var1, y=reliprop, fill=Var1)) + geom_bar(stat="identity") + ylab("Proportion") + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+```
+
+Another type of bar graph shows a distribution of responses for a certain level of a categorical variable. Consider the bar graph below, which was produced with the code:
+
+```{r echo=TRUE}
+ggplot(data=gss, aes(x = Race, fill=Education)) + geom_bar(position = "dodge", na.rm=TRUE) 
+```
+
+From above one can see the distribution of education level amongst the three different types of races data was collected on in the 2002 General Social Survey. 
+
+We can also parse out the data and look at a bar graph for a certain race:
+
+```{r echo=TRUE}
+ggplot(data=filter(gss, Race == "Other"), aes(x = Education)) + geom_bar(na.rm=TRUE)
+```
+
+This can be converted into a sorted type of bar graph with
+
+```{r echo=TRUE}
+newdat = filter(gss, Race == "Other")
+counts = as.data.frame(sort(table(newdat$Education)))
+counts
+ggplot(data=counts, aes(x=Var1, y=Freq, fill=Var1)) + geom_bar(stat="identity") + xlab("Other") + ylab("Count")
+props = counts$Freq/sum(counts$Freq)
+props
+newdat2 = data.frame(counts, props)
+head(newdat2, 5)
+ggplot(newdat2, aes(x=Var1, y=props, fill=Var1)) + geom_bar(stat="identity") + xlab("Other") + ylab("Proportion") 
+```
+
+-------
+
+(a) Create a bar graph that demonstrates the distribution of race within each level of education.  What can you infer from this bar graph?
+```{r}
+ggplot(data=gss, aes(x = Education, fill=Race)) + geom_bar(position="dodge", na.rm=TRUE) + ggtitle("Distribution of Race within Each Education Level") + theme(axis.title.x=element_blank())
+
+counts = as.data.frame(table(gss$Education, gss$Race)) 
+colnames(counts) = c("Education","Race","Freq")
+
+ggplot(counts, aes(x=Education, y=Freq, fill=Race)) + geom_bar(stat="identity") + theme(axis.title.x=element_blank())
+
+counts$reliprop = counts$Freq / ave(counts$Freq, counts$Education, FUN=sum)
+
+ggplot(counts, aes(x=Education, y=reliprop, fill=Race)) + geom_bar(stat="identity") + ylab("Proportion") + theme(axis.title.x=element_blank())
+```
+There are more White people in almost every education level. Black and Other races are fewer, but they make up a bigger part of the lower education levels.
+
+
+(b) Create a data visualization that can be used to demonstrate if there is a relationship between one's marital status (Marital) and their education level. What can you infer from the graph?
+```{r}
+ggplot(gss, aes(x = Education, fill = Marital)) + geom_bar(position="dodge", na.rm=TRUE) + ggtitle("Marital Status within Each Education Level") + theme(axis.title.x=element_blank())
+
+counts = as.data.frame(table(gss$Education, gss$Marital))
+colnames(counts) = c("Education","Marital","Freq")
+
+ggplot(counts, aes(x=Education, y=Freq, fill=Marital)) + geom_bar(stat="identity") + theme(axis.title.x=element_blank())
+
+counts$reliprop = counts$Freq / ave(counts$Freq, counts$Education, FUN=sum)
+
+ggplot(counts, aes(x=Education, y=reliprop, fill=Marital)) + geom_bar(stat="identity") + ylab("Proportion") + theme(axis.title.x=element_blank())
+```
+#Most people in every education level are married. People who are never married or widowed are more common in lower education levels, while divorced people are spread across all education levels.
+
+(c) Create a data visualization that can be used to demonstrate if there is a relationship between one's Gender and their Politics. What can you infer from the graph?
+```{r}
+ggplot(gss, aes(x = Politics, fill = Gender)) + geom_bar(position="dodge", na.rm=TRUE) + ggtitle("Gender Distribution within Politics") + theme(axis.title.x=element_blank())
+
+counts = as.data.frame(table(gss$Politics, gss$Gender))
+colnames(counts) = c("Politics","Gender","Freq")
+
+ggplot(counts, aes(x=Politics, y=Freq, fill=Gender)) + geom_bar(stat="identity") + theme(axis.title.x=element_blank())
+
+counts$reliprop = counts$Freq / ave(counts$Freq, counts$Politics, FUN=sum)
+
+ggplot(counts, aes(x=Politics, y=reliprop, fill=Gender)) + geom_bar(stat="identity") + ylab("Proportion") + theme(axis.title.x=element_blank())
+```
+Men and women are almost equal in most politics categories. Women are a little more liberal compared to men based on counts. 
+
+</br> 
+</br>
+
+**10.** **(4 marks)** Refer to the **iris** data set in *R*. This data set consists of 150 cases. There are five different variables in this data set. "Species" is a categorical variable that indicates the species of the iris ("setosa", "versicolor", "virginica"). The other 4 variables are Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, all measured in centimeters. 
+
+```{r}
+head(iris, 4) #shows the first four
+```
+
+(a) Create a scatterplot that demonstrates the relationship between an iris's petal length and petal width. Place the "Petal.Length" variable as the $y$-axis and the "Petal.Width" variable as the $x$-axis. Within this visualization, differentiate between the species.
+```{r}
+ggplot(data=iris, aes(x = Petal.Width, y = Petal.Length, color = Species)) + geom_point() + ggtitle("Petal Length vs Petal Width by Species")
+```   
+
+
+(b) Create side-by-side boxplots that will compare the distributions of petal length by species.
+```{r}
+ggplot(iris, aes(x=Species, y=Petal.Length, fill=Species)) + geom_boxplot() + ggtitle("Distribution of Petal Length by Species")
+```
+
+
+(c) Compute the means, medians, standard deviations, $x_{5}$, $x_{95}$ (the 5th and 95th percentiles, respectively) for the data you visually summarized in part (b). 
+```{r}
+
+summary_stats <- iris %>% 
+group_by(Species) %>%  
+summarise( mean = mean(Petal.Length), median = median(Petal.Length), sd = sd(Petal.Length), x5 = quantile(Petal.Length, 0.05), x95 = quantile(Petal.Length, 0.95))
+
+summary_stats
+```
+
+</br>
+</br>
+
+**11.** **(6 marks)** A local courier service advertises that the amount of time they take to deliver a package can be modeled by the Normal distribution with a mean delivery time of 5.0 hours and a standard deviation of 1.5 hours. A random sample of $n = 12$ deliveries was taken, and the number of hours it took each to be delivered was recorded. The data appears in csv
+[file](https://raw.githubusercontent.com/Statman44/Data602/main/Data602Assignment1Question11.csv).
+
+(a) Read the data in this file into a data frame. Create violin plot of these data. What does this violin plot suggest? Do these data support the "Normal distribution" assumption? Provide a few statements indicating why or why not the data supports/does not support this. And please, do not carry out any 'statistical testing' of this. 
+```{r}
+delivery_time = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/Data602Assignment1Question11.csv")
+
+ggplot(delivery_time, aes(x = "", y = Delivery_time)) +  geom_violin(fill="yellow") +  geom_boxplot(width=0.1, outlier.shape=NA) + ylab("Delivery Time (hours)") + ggtitle("Violin Plot of Delivery Times")
+```
+The violin plot shows delivery times are roughly symmetric (bell-shaped distribution which is characteristic of a Normal distribution). It does not look very skewed (no significant gaps), so it is reasonable to assume a Normal distribution. 
+
+(b) From this data, compute the sample mean, the sample median, the sample standard deviation, the first and third quartiles, and the 99th percentile.  
+```{r}
+summary_stats = data.frame(mean = mean(delivery_time$Delivery_time), median = median(delivery_time$Delivery_time), sd = sd(delivery_time$Delivery_time), Q1 = quantile(delivery_time$Delivery_time, 0.25), Q3 = quantile(delivery_time$Delivery_time, 0.75), P99 = quantile(delivery_time$Delivery_time, 0.99))
+
+summary_stats
+```
+
+
+(c) Suppose you were part of a marketing campaign to promote the efficiency of delivery times, as a part of the campaign there was a promise of delivery within a certain number of hours, beyond which there would be a refund. The company would only like to provide refunds for a maximum of 1% of all deliveries. Provide the point of refund. 
+```{r}
+refund = qnorm(0.99, mean = 5.0, sd = 1.5)
+refund
+```
+
+</br>
+</br>

@@ -1,0 +1,370 @@
+---
+title: 'Multiple Linear Regression '
+output: html_notebook
+---
+
+## ASSIGNMENT 2
+
+## First-order Model with Interaction Terms (Quantitative and Qualitative Variable and Model Selection 
+
+*Deadline: Nov 23 , 2025, by 11:59 pm. Submit to Gradescope.ca*
+
+&copy; Thuntida Ngamkham 2022 Modified by Danika Lipman 2024
+
+
+**Problem 1**. The file __tires.csv__ provides the results of an experiment on tread wear per 160 km and the driving speed in km/hour. The researchers looked at 2 types of tires and tested 20 random sample tires. The response variable is the tread wear per 160 km in the percentage of tread thickness, and the quantitative predictor is the average speed in km/hour.
+
+```{r}
+tires=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/tires.csv", header = TRUE)
+head(tires,5)
+str(tires)
+```
+
+Answer the following questions
+
+(a) Use the individual T-test to evaluate the significant predictors from the full model at $\alpha=0.05$ and write the estimated best fit model. 
+```{r}
+tires$type <- as.factor(tires$type)
+
+full_model <- lm(wear ~ ave + type, data = tires)
+summary(full_model)
+```
+Since both ave and typeB are significant, the best-fit additive model is: y=−0.6445+0.0113(ave)+0.1725(typeB)
+
+
+
+(b) Based on the output in (a), define the dummy variable that explains the two types of tires.
+
+type A = 0 (baseline)
+For Type A tires, the model is 𝑦= − 0.6445 + 0.01131 ⋅ ave
+
+type B = 1
+For Type B tires, the model is 𝑦= − 0.6445 + 0.01131 ⋅ ave + 0.1725 
+
+(c) From the best fit model in part (a), interpret all possible regression coefficient estimates,$\hat{\beta_i}$.
+Intercept = –0.6445
+Slope for ave = 0.01131
+Coefficient for type B = 0.1725
+
+When speed = 0 km/h and tire = Type A, predicted wear is −0.6445%.
+While holding tire type constant, for each 1 km/h increase in speed, the tread wear increases by 0.01131 percentage points per 160 km.
+At the same speed, Type B tires wear 0.1725 percentage points more than Type A tires on average.
+
+
+(d) From the best fit model in part (a), you can improve this model by adding an interaction term(s). Evaluate whether the interaction term(s) is(are) significant to be added in the model at $\alpha = 0.05$.  Summarize which model would you suggest using for predicting y. 
+```{r}
+interaction_model <- lm(wear ~ ave * type, data = tires)
+summary(interaction_model)
+anova(full_model, interaction_model)
+
+```
+The interaction model reduces RSS by 0.26056, and the improvement is also statistically significant (p < 0.05).
+So the interaction term is significant at alpha = 0.05.
+The interaction model is better than the additive model.
+The recommended model is:  wear = - 0.3889+ 0.008783(ave) - 1.0800(typeB) + 0.011984(ave x typeB)
+
+(e)  From the model in part (d), report the adjusted-$R^2$ value from the model selected and interpret its value.
+Adjusted R-squared: 0.960
+The model explains 96.0% of the variation in tread wear after adjusting for the number of predictors.
+This shows a good fit, meaning speed, tire type, and their interaction account for nearly all observed variation in wear.
+
+
+(f)  Predict the average tread wear per 160 km in the percentage of tread thickness for a car with type A with the average speed of 100 km/hour from the model selected in part (d) with 95% confidence.
+```{r}
+new <- data.frame(type = "A", ave = 100)
+predict(interaction_model, newdata = new, interval = "confidence", level = 0.95)
+```
+We are 95% confident that the average tread wear per 160 km for Type A tires driven at 100 km/h lies between 0.482% and 0.497%. 
+
+-------------------------------------------------------------------
+
+**Problem 2**. A team of mental health researchers wishes to compare three methods (A, B, and C) of treating severe depression. They would also like to study the relationship between age and treatment effectiveness as well as the interaction (if any) between age and treatment.
+
+Each member of a simple random sample of 36 patients, comparable with respect to diagnosis and severity of depression, was randomly assigned to receive treatment A, B, or C. The data are given in __MentalHealth.csv__. 
+
+```{r}
+mentalhealth=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/MentalHealth.csv", header = TRUE)
+head(mentalhealth,5)
+```
+
+
+Answer the following questions
+
+(a) Which is the dependent variable (the response variable)?
+
+Effect is the dependent variable.
+
+
+(b) What are the independent variables (the predictors)?
+Age and Method are the independent variable. 
+
+(c) Draw a scatter diagram of the sample data with EFFECT on the y-axis and AGE on the x-axis using different symbols/colors for each of the three treatments. Briefly summarize the visualization. [Hint: Check MLR part II under Interaction Effect in MLR with both Quantitative and Qualitative Variable models].
+```{r}
+library(ggplot2)
+
+ggplot(mentalhealth, aes(x = AGE, y = EFFECT, color = METHOD, shape = METHOD)) +
+  geom_point(size = 2) +
+  theme_minimal() +
+  labs(x = "Age", y = "Treatment Effect")
+
+```
+The scatterplot indicates that, treatment effectiveness increased with age for each of the three methods. Effectiveness looks the greatest with Method A, in the middle with Method B, and the lowest with Method C. This visual pattern suggests a possible interaction between Age and Method
+
+(d) Is there any interaction between age and treatment? Test the hypothesis at $\alpha=0.05$.
+Null hypothesis: No interaction between AGE and METHOD.
+
+```{r}
+int_model <- lm(EFFECT ~ AGE * METHOD, data = mentalhealth)
+summary(int_model)
+anova(int_model)
+
+```
+The p-value is 9.41e-07 for the interaction between age and treatment method which is less than 0.05 (alpha).
+We conclude that there is a significant interaction between age and treatment method. This means the relationship between age and treatment effectiveness depends on which treatment is used.
+
+AGE × METHODB p = 0.108 → not significant
+AGE × METHODC p = 3.98e-07 → significant
+Only Method C shows a significant interaction with age. The relationship between age and effectiveness depends on whether Method C is used.
+
+
+(e) From part (d), write the final model with sub-models for predicting the treatment effectiveness. Please ensure you substitute all regression coefficients to the models.
+EFFECT=47.5156+0.3305(AGE)−18.5974(METHODB)−41.3042(METHODC)+0.7029(AGE×METHODC)
+
+Method A (baseline): EFFECTA = 47.5156+0.3305(AGE)
+Method B: EFFECTB = 28.9182 + 0.3305 ⋅ AGE(no significant interaction)
+Method C: EFFECTC = 6.2114+1.0334⋅AGE(significant interaction)
+
+(f) Interpret the effect of treatment from sub-models in part (e). 
+Method A: Increases moderately with age (0.33 per year).
+Method B: Slightly lower effectiveness than A at all ages, slope same as A (no significant interaction).
+Method C: Very low effectiveness for young patients, but increases rapidly with age (1.03 per year).
+
+So for younger patients, Method A is best, B is slightly lower, C is worst. For older patients, Method C can outperform Methods A and B due to its bigger age slope. 
+
+(g) Plot the three regression lines on the scatter diagram obtained in part (c). May one have the same conclusion as in part (f)?
+
+
+```{r}
+ggplot(mentalhealth, aes(x = AGE, y = EFFECT, color = METHOD, shape = METHOD)) +
+  geom_point(size = 2) +
+  geom_abline(intercept = 47.5156, slope = 0.3305, color = "red") +   # Method A
+  geom_abline(intercept = 28.9182, slope = 0.3305, color = "green") +  # Method B
+  geom_abline(intercept = 6.2114, slope = 1.0334, color = "blue") +  # Method C
+  theme_minimal() +
+  labs(x = "Age", y = "Treatment Effect", title = "Regression lines by Method")
+
+```
+Red line (Method A): Starts higher and increases moderately with age.
+- Method A consistently has slightly higher effectiveness than B and C across ages.
+Green line (Method B): Starts slightly lower than A but increases at a similar moderate rate.
+- For this method, I would like to change my conclusion for part f) where I wrote that Method A and B have the same slope. I believe the slope for Method B is higher (so that the line can capture the data points for Method B) than Method A but there is no interaction between each other method. 
+Blue line (Method C): Starts the lowest but has the steepest slope, rising quickly with age.
+- For older patients, Method C is the most effective.
+
+I would like to keep my other conclusions the same. So in general, the effectiveness increases with age for all methods. Method choice matters more for older patients because of the strong age × Method C interaction.
+
+----------------------------------------------------------
+
+
+**Problem 3**. __Collusive bidding in road construction__. Road construction contracts in the state of Florida are awarded on the basis of competitive, sealed bids; the contractor who submits the lowest bid price wins the contract. During the 1980s, the Office of the Florida Attorney General (FLAG) suspected numerous contractors of practicing bid collusion (i.e., setting the winning bid price above the fair, or competitive, price in order to increase proect margin). By comparing the bid prices (and other important bid variables) of the fixed (or rigged) contracts to the competitively bid contracts, FLAG was able to establish invaluable benchmarks for detecting future bid-rigging. FLAG collected data for 279 road construction contracts. For each contract, the following variables shown below were measured and are **only** considered for this problem. 
+
+1. Price of contract ($) bid by lowest bidder, LOWBID.
+
+2. Department of Transportation (DOT) engineer's estimate of fair contract price ($), DOTEST.
+
+3. Status of contract (1 if fixed, 0 if competitive), STATUS	
+
+4. District (1, 2, 3, 4, or 5) in which the construction project is located, DISTRICT.
+
+5. Number of bidders on contract, NUMIDS.
+
+6. Estimated number of days to complete work, DAYSEST.
+
+7. Length of road project (miles), RDLNGTH.
+
+8. Percentage of costs allocated to liquid asphalt, PCTASPH.
+
+9. Percentage of costs allocated to base material, PCTBASE.
+
+10. Percentage of costs allocated to excavation, PCTEXCAV.
+
+11. Percentage of costs allocated to mobilization, PCTMOBIL.
+
+12. Percentage of costs allocated to structures, PCTSTRUC.
+
+13. Percentage of costs allocated to traffic control, PCTTRAF.
+
+
+The data are saved in the file named __FLAG2.txt__. 
+
+```{r}
+flag=read.table("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/FLAG2.txt", header = TRUE)
+head(flag,3)
+```
+
+Note: In our dataset, the variable DISTRICT represents five different regions, coded as 1–5. Before running stepwise regression, we must ensure that R treats DISTRICT as a categorical (factor) variable rather than as a numeric one.
+
+However, when using the olsrr package, including factor(DISTRICT) directly in the model formula can cause errors or unexpected behavior.
+Instead, convert the variable to a factor before fitting the model:
+
+```{r}
+flag$DISTRICT <- as.factor(flag$DISTRICT)
+str(flag$DISTRICT)
+```
+
+This tells R that DISTRICT is categorical and allows it to correctly create dummy variables for each district level. As a result, the stepwise, forward, or backward selection procedures in olsrr will properly include or exclude the categorical variable in the model.
+
+
+Answer the following questions:
+
+(a) Consider building a model for the low-bid price (Y). Apply __Stepwise Regression Procedure with p_enter=0.05 and p_remove=0.1__ to the data to find the independent variables most suitable for modeling $Y$. 
+
+
+```{r}
+# Full model
+fullmodel <- lm(LOWBID ~ DOTEST + STATUS + DISTRICT + NUMIDS + DAYSEST + RDLNGTH + PCTASPH + PCTBASE + PCTEXCAV + PCTMOBIL + PCTSTRUC + PCTTRAF, data=flag)
+
+# Stepwise selection with p_enter=0.05 and p_remove=0.1
+stepwise_model <- ols_step_both_p(fullmodel, penter=0.05, premove=0.1)
+stepwise_model
+```
+Stepwise regression selected DOTEST, STATUS, NUMIDS, and DAYSEST as predictors
+
+Stepwise model equation (additive): 
+LOWBID = 23805.10 + 0.917 x DOTEST + 100208.46 x STATUS − 15390.33 x NUMIDS + 272.27 x DAYSEST 
+
+(b) Consider building a model for the low-bid price (Y). Apply __Forward Regression Procedure with p_val=0.05__ :*ols_step_forward_p(fullmodel,p_val=0.05)* to the data to find the independent variables most suitable for modeling Y. 
+```{r}
+forward_model <- ols_step_forward_p(fullmodel, p_val = 0.05)
+forward_model
+
+```
+This model selected DOTEST, STATUS, and NUMIDS as predictors
+
+Forward Selection Model (Additive):
+LOWBID = 57105.97 + 0.937 x DOTEST + 95252.39 x STATUS − 15353.82 x NUMIDS  
+
+(c) Consider building a model for the low-bid price (Y). Apply __Backward Regression Procedure with p_val=0.05__ :*ols_step_backward_p(fullmodel,p_val=0.05)* to the data to find the independent variables most suitable for modeling Y.  
+```{r}
+backward_model <- ols_step_backward_p(fullmodel, p_val = 0.05)
+backward_model
+
+```
+This model selected DOTEST, STATUS, and NUMIDS as predictors
+
+Final Backward Elimination Model (Additive): 
+LOWBID = 57105.97 + 0.937 x DOTEST + 95252.39 x STATUS − 15353.82 x NUMIDS 
+
+(d) Test the individual t-test at $\alpha=0.05$ to evaluate the variables in the full model. What predictors should be kept in the model based on the individual t-tests from the full model?
+```{r}
+summary(fullmodel)
+```
+Predictors to keep in the model are DOTEST, STATUS, NUMIDS, and DISTRICT4; as they are significant (p < 0.05).
+
+
+(e) Compare the results, parts (a)-(d). Which independent variables consistently are selected as the ''best'' predictors for the model? Write all possible additive model(s) for predicting $Y$. Note! Proposing more than one model is acceptable.
+
+Variables consistently selected across stepwise, forward, backward, and t-tests: DOTEST, STATUS, and NUMIDS. 
+Additive Model: LOWBID = 57105.97 + 0.937 x DOTEST + 95252.39 x STATUS − 15353.82 x NUMIDS
+
+Another model can be: LOWBID = 57105.97 + 0.937 x DOTEST + 95252.39 x STATUS − 15353.82 x NUMIDS − 272900 x DISTRICT4
+
+(f) Assume that your model selected in part (e) contains the following predictors: DOTEST,STATUS,NUMBIDS, and DISTRICT. Calculate the absolute difference in average contact bid price (by the lowest bidder) between District 1 and 4,when other predictors are held as a constant.
+Sub-Model: 
+LOWBID = 57105.97 + 0.937 x DOTEST + 95252.39 x STATUS − 15353.82 x NUMIDS − DISTRICT coefficients
+```{r}
+# Fitted model
+best_model <- lm(LOWBID ~ DOTEST + STATUS + NUMIDS + DISTRICT, data = flag)
+
+# Absolute difference between District 1 and 4
+abs_diff_1_4 <- abs(coef(best_model)["DISTRICT4"])
+abs_diff_1_4
+```
+Absolute difference = 316505.6
+
+(g) Assume that your model selected in part (e) contains the following predictors: DOTEST,STATUS,NUMBIDS, and DISTRICT. Calculate the difference in average contact bid price (by the lowest bidder) between District 2 and 5,when other predictors are held as a constant.
+```{r}
+# Absolute difference between District 2 and 5
+abs_diff_2_5 <- abs(coef(best_model)["DISTRICT2"] - coef(best_model)["DISTRICT5"])
+abs_diff_2_5
+```
+Absolute difference: 85148.63
+
+(h) Assume that your model selected in part (e) contains the following predictors: DOTEST,STATUS,NUMBIDS, and DISTRICT. Build the first order model with interaction terms. Write the best fit model for predicting $Y$.
+```{r}
+# Full first-order model
+interaction_model <- lm(LOWBID ~ (DOTEST + STATUS + NUMIDS + DISTRICT)^2, data = flag)
+summary(interaction_model)
+```
+```{r}
+# Extract only significant terms
+significant_terms <- summary(interaction_model)$coefficients[
+    summary(interaction_model)$coefficients[,4] < 0.05 , ]
+significant_terms
+```
+The significant predictors in the first-order model with interactions were: DOTEST, DISTRICT4, DOTEST × STATUS, DOTEST × NUMIDS,  DOTEST × DISTRICT5, and NUMIDS × DISTRICT4 
+
+Best fit model: 
+LOWBID=−33530+1.097(DOTEST)−1532000(DISTRICT4)+0.0945(DOTEST x STATUS) − 0.01934 (DOTEST x NUMIDS) − 0.1330 (DOTEST x DISTRICT5) + 151,900 (NUMIDS x DISTRICT4)
+
+(i) Compare the RSE from the first-order model in part (d) with the interaction model in part (h). Interpret the result. 
+First-order (additive) model RSE: 278000 
+Interaction model RSE: 251800 
+The interaction model has a lower RSE, meaning it fits the data better. So including interaction terms improves prediction accuracy because some predictors influence LOWBID jointly rather than independently.
+
+
+(j)  Find the $R^2_{adj}$ and interpret the result from part (h).
+Adjusted R^2 for the interaction model: 0.9809 
+The model explains about 98.09% of the variability in LOWBID after accounting for the number of predictors. This indicates an excellent model fit, and even after penalizing for added interaction terms, the model still captures nearly all variation in contract bid prices.
+
+--------------------------------------------------------------
+
+
+**Problem 4:**  An author studied family caregiving in Korea of older adults with dementia. The outcome variable, caregiver burden (BURDEN), was measured by the Korean Burden Inventory (KBI) where scores ranged from 28 to 140 with higher scores indicating higher burden. The following independent variables were reported by the researchers:
+
+1. CGAGE: caregiver age (years)
+2. CGINCOME: caregiver income (Won-Korean currency)
+3. CGDUR: caregiver-duration of caregiving (month)
+4. ADL: total activities of daily living where low scores indicate the elderly perform activities
+independently.
+5. MEM: memory and behavioral problems with higher scores indicating more problems.
+6. COG: cognitive impairment with lower scores indicating a greater degree of cognitive impairment.
+7. SOCIALSU: total score of perceived social support (25-175, higher values indicating more
+support). The reported data are in the file __KBI.csv__.
+
+
+```{r}
+KBI=read.csv("https://raw.githubusercontent.com/Thuntida/dataset/refs/heads/main/KBI.csv", header = TRUE)
+KBI
+```
+
+
+
+Answer the following questions:
+
+(a) Use stepwise regression (with stepwise selection) to find the ''best'' set of predictors of caregiver burden. Report all significant predictors. __[Hint: Use p_enter =0.1 and p_remove=0.3].__
+```{r}
+full_mod <- lm(BURDEN ~ CGAGE + CGINCOME + CGDUR + ADL + MEM + COG + SOCIALSU, data = KBI)
+step_mod <- ols_step_both_p(full_mod, p_enter = 0.1, p_remove = 0.3, details = TRUE)
+step_mod
+summary(step_mod$model)
+```
+The best-fitting model included MEM, SOCIALSU, and CGDUR as predictors of caregiver burden. In the final model, MEM (p < .001) and SOCIALSU (p < .001) were statistically significant predictors, while CGDUR was not significant at the .05 level (p = .064).
+
+Stepwise-selected model is:
+BURDEN = 115.54 + 0.566(MEM) − 0.492(SOCIALSU) + 0.122(CGDUR).
+
+
+(b) Use all-possible-regressions-selection to find the ''best'' predictors of caregiver burden. Which model would you pick based on AIC? Adjusted $R^2$? Report all significant predictors.
+The model with the lowest AIC was the three-predictor model containing MEM, SOCIALSU, and CGDUR, and the model with the highest adjusted R² was the same three-predictor model. In this model, the significant predictors of caregiver burden were MEM (p < .001) and SOCIALSU (p < .001), while CGDUR was not significant (p = .064).
+
+BURDEN = 115.54 + 0.566(MEM) − 0.492(SOCIALSU) + 0.122(CGDUR).
+
+
+(c) Compare the results, parts a-b. Which independent variables consistently are selected as the ''best'' predictors?  Build the first order model with interaction terms based on these predictors, evaluate which interaction terms are significant to be added in the model, and conclude the the final model for the prediction.
+MEM and SOCIALSU were consistently selected as the best predictors. 
+A first-order model including their interaction was: BURDEN = β₀ + β₁(MEM) + β₂(SOCIALSU) + β₃(MEM×SOCIALSU). 
+The interaction term was tested and found not significant, so the final predictive model remained: BURDEN = 115.54 + 0.566(MEM) − 0.492(SOCIALSU).
+
+
+-----------------------------------------------------

@@ -1,0 +1,189 @@
+---
+title: "Group_project_602_Q1"
+author: "Abdalla Elshafey"
+date: "2025-10-06"
+output: html_document
+---
+
+```{r}
+#Question 1: Does high quality vinho verde red wines (quality >5) have a significantly higher alcohol content compared to wines with low quality. 
+
+
+wine = read.csv("C:/Users/abasa/Downloads/winequality-red.csv")
+length(wine$alcohol)
+
+fav_stats(wine$quality)
+# min = 3;  max = 8
+```
+
+```{r}
+# Created two bins [0-5) and [5,10]
+wine = wine %>%
+  mutate(binary_quality = cut(quality, breaks = c(0,5,10), labels = c("Low", "High")))
+
+wine
+```
+
+```{r}
+
+# Check normality assumptions
+qqnorm(wine$alcohol);qqline(wine$alcohol) # Not visually apparent. Recourse to numeric test
+
+shapiro.test(wine$alcohol) # p-value < 0.00000000000000022, suggesting data are not normal
+# We will therefore use a permutation test to compare means 
+
+```
+```{r}
+qqnorm(wine$alcohol[wine$binary_quality == "High"]);qqline(wine$alcohol[wine$binary_quality == "High"])
+```
+```{r}
+shapiro.test(wine$alcohol[wine$binary_quality == "High"])
+```
+```{r}
+
+qqnorm(wine$alcohol[wine$binary_quality == "Low"]);qqline(wine$alcohol[wine$binary_quality == "Low"])
+shapiro.test(wine$alcohol[wine$binary_quality == "Low"])
+```
+
+
+
+
+```{r}
+# Find means of both samples (low vs high quality wine)
+favstats(data = wine, alcohol~binary_quality)
+
+
+```
+
+```{r}
+# Null hypothesis: mean alcohol quantity of high quality wines - mean alcohol quantity of low quality wines <= 0
+# Alternate: mean alcohol quantity of high quality wines - mean alcohol quantity of low quality wines > 0
+threshold = 10.855029 - 9.926478 
+threshold # 0.928551
+# Permutation test with 5000 iterations
+
+length(wine$alcohol) # 1599
+table(wine$binary_quality) # High = 855;  Low = 744
+#sample_space = c(rep(1))
+
+N=4999
+permvector = numeric(N)
+for (i in 1:N)
+{
+  index = sample(1599, 855, replace = FALSE)
+  permvector[i] = mean(wine$alcohol[index])-mean(wine$alcohol[-index])
+
+}
+# finding p-value for right-tailed hypothesis test
+(sum(permvector>= threshold)+1)/(N+1) # 0.0002
+
+# p < 0.05. Therefore, we reject the Null hypothesis and conclude that the probability of another sample wherein mean alcohol quantity of high quality wines - mean alcohol quantity of low quality wines >= 0.928551 is 0.02 %
+
+
+```
+```{r}
+# Bootstrap CI for mean differences alcohol
+set.seed (1111)
+bootvector = numeric(5000)
+low_col = wine$alcohol[wine$binary_quality == "Low"]
+high_col = wine$alcohol[wine$binary_quality == "High"]
+
+for ( i in 1: length(bootvector))
+{
+  low_qual = mean(sample(low_col, length(low_col), replace = TRUE), na.rm = TRUE)
+  high_qual = mean(sample(high_col, length(high_col), replace = TRUE), na.rm = TRUE)
+  bootvector[i] = high_qual - low_qual
+}
+
+bootvector.df = data.frame(bootvector)
+
+ggplot(bootvector.df, aes(x = bootvector))+
+  geom_histogram(aes(y=after_stat(density)), col = "black", fill = "skyblue")+
+  geom_density(col = "red", size = 1.2)+
+  theme_minimal()+
+    labs(
+    title = "Bootstrap Distribution of Mean Alcohol Differences",
+    subtitle = "High-quality minus Low-quality Vinho Verde Red Wines",
+    x = "Mean Difference in Alcohol Content (High - Low)",
+    y = "Density"
+  )
+  
+qdata(~bootvector, p = c(0.025,0.975), data = bootvector.df)
+
+```
+
+
+```{r}
+wine$alcohol[-index]
+```
+
+
+```{r}
+# Histogram visualization of permutation vector
+set.seed(9999)
+permvector.df = data.frame(permvector)
+ggplot(permvector.df, aes(x=permvector))+
+  geom_histogram(aes(y=after_stat(density)), col = "black", fill = "skyblue")+
+  geom_density(col = "red", size = 1.2)+
+  theme_minimal()+
+    labs(
+    title = "Permutation Distribution of Mean Alcohol Differences",
+    subtitle = "High-quality vs Low-quality Vinho Verde Red Wines",
+    x = "Mean Difference in Alcohol Content (High - Low)",
+    y = "Density"
+  )
+  
+```
+
+```{r}
+# CI estimation (95%)
+qdata(~permvector, data = permvector.df, p = c(0.025,0.975) ) # [-0.1061665,  0.1063355]
+```
+
+```{r}
+# Extra visualisations
+
+ggplot(wine, aes(x = binary_quality, y = alcohol, fill = binary_quality)) +
+  geom_violin(trim = FALSE, alpha = 0.5, color = "black") +
+  geom_boxplot(width = 0.15, outlier.shape = 16, outlier.size = 1.5, color = "black", fill = "white") +
+  scale_fill_manual(values = c("Low" = "#F8766D", "High" = "#00BFC4")) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Alcohol Content by Wine Quality Level",
+    subtitle = "Vinho Verde Red Wines (Low vs High Quality)",
+    x = "Quality Category",
+    y = "Alcohol (% by volume)",
+    fill = "Quality"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 11, color = "gray30"),
+    legend.position = "none",         # remove if legend not needed
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
+```{r}
+
+ggplot(wine, aes(x = binary_quality, y = pH, fill = binary_quality)) +
+  geom_violin(trim = FALSE, alpha = 0.5, color = "black") +
+  geom_boxplot(width = 0.15, outlier.shape = 16, outlier.size = 1.5, color = "black", fill = "white") +
+  scale_fill_manual(values = c("Low" = "#F8766D", "High" = "#00BFC4")) +
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "pH Content by Wine Quality",
+    subtitle = "Vinho Verde Red Wines (Low vs High Quality)",
+    x = "Quality Category",
+    y = "pH ",
+    fill = "Quality"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(size = 11, color = "gray30"),
+    legend.position = "none",         # remove if legend not needed
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+

@@ -1,0 +1,82 @@
+---
+title: "DATA602WineProject"
+author: "Yu Hao"
+date: "2025-10-06"
+output: pdf_document
+---
+
+``` {r, message=FALSE, warning=FALSE}
+rm(list=ls(all=TRUE))
+library(ggplot2)
+library(mosaic)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+## Question 2: Is the pH level of the resultant *vinho verde* red wine significantly correlated with its perceieved quality?
+
+### Statistical Hypotheses
+$H_0$: The pH level of the red wine does not have a significant linear relationship with its quality score.
+
+$H_A$: The pH level of the red wine has a significant linear relationship with its quality score. 
+
+$$
+\begin{aligned}
+H_0&:\beta_1=0\\
+H_A&:\beta_1\neq0\\
+\end{aligned}
+$$
+
+#### Assumption Checking
+Let $X$ represent the pH level of a bottle of *vinho verde* red wine and let $Y$ represent the quality score of a bottle of *vinho verde* red wine. 
+
+Relationship between $X$ and $Y$ variables
+``` {r 2.a1}
+wine<-read.csv("C:\\Users\\yuhao\\Desktop\\Uni\\DATA 602\\winequality-red.csv")
+
+ggplot(wine, aes(x=pH, y=quality))+
+  geom_point(col="blue")+
+  xlab("pH Value")+
+  ylab("Quality Score")+
+  ggtitle("Scatter Plot of Red Wine pH and Quality Score.")+
+  geom_smooth(method="lm", col="red")
+```
+
+Normality of the Residuals
+``` {r 2.a2}
+wine.lm<-lm(quality~pH, data=wine)
+residual<-wine.lm$residuals
+stand.residual<-rstandard(wine.lm)
+xvalue<-wine$pH
+yvalue<-wine$quality
+
+diag.df<-data.frame(xvalue, yvalue, residual, stand.residual)
+
+ggplot(diag.df, aes(sample=stand.residual))+
+  stat_qq(col="blue")+
+  stat_qq_line(col="red")+
+  ggtitle("Normal Probability Plot of Red Wine Residuals")
+```
+
+Homoscedasticity - Equal Variance between Residuals
+``` {r 2.a3}
+ggplot(diag.df, aes(x=xvalue, y=residual))+
+  geom_point(col="blue")+
+  xlab("Predicted pH of Red Wines")+
+  ylab("Residuals")+
+  ggtitle("Plot pH Values of Red wines to Residuals")+
+  geom_hline(yintercept=0, color="red", linetype="dashed")
+```
+
+#### Analysis
+``` {r 2.b}
+summary(wine.lm)
+cor(wine$pH, wine$quality)
+```
+
+The estimated $\beta_1$ is -0.3020 with a p-value of 0.021. The adjusted $r^2$ value is 0.002709 and the correlation coefficient is -0.057. 
+
+#### Conclusion
+The p-value from the linear model is 0.021 which smaller than the alpha we set at 0.05. We reject the null hypothesis and conclude that there is a significant linear relationship between the pH value and the quality score of the red wines. 
+
+However, despite the significant linear relationship, the low adjusted $r^2$ values and small correlation coefficient indicate that the negative linear relationship is very weak. 

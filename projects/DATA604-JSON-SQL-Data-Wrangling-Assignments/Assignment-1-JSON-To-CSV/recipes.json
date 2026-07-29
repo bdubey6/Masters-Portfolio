@@ -1,0 +1,122 @@
+{
+    "Categories": [
+        {
+            "CategoryName": "Slow Cooker",
+            "Book": [
+                {
+                    "BookTitle": "Slow Cooker Recipes",
+                    "ISBN": "978-1234567890",
+                    "Recipes": [
+                        {
+                            "Recipe": "Chicken Stew",
+                            "PreparationTime": "30 minutes",
+                            "Ingredients": [
+                                "Chicken thighs",
+                                "Potatoes",
+                                "Thyme",
+                                "Black pepper",
+                                "Parsley",
+                                "Chicken broth"
+                            ],
+                            "Components": [
+                                {
+                                    "Recipe": "Homemade Chicken Broth",
+                                    "PreparationTime": "2 hours",
+                                    "Ingredients": [
+                                        "Chicken bones",
+                                        "Onion",
+                                        "Carrots",
+                                        "Celery",
+                                        "Garlic",
+                                        "Water",
+                                        "Salt",
+                                        "Black pepper"
+                                    ]
+                                },
+                                {
+                                    "Recipe": "Garlic Bread",
+                                    "PreparationTime": "10 minutes",
+                                    "Ingredients": [
+                                        "Bread",
+                                        "Garlic",
+                                        "Butter"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+
+            "Blog": [
+                {
+                    "Title": "Slow Cooker Blog",
+                    "Author": "Cooking Enthusiast",
+                    "Address": "www.example.com/slow-cooker-blog",
+                    "Recipes": [
+                        {
+                            "Recipe": "Beef Chili",
+                            "PreparationTime": "20 minutes",
+                            "Ingredients": [
+                                "Ground beef",
+                                "Kidney beans",
+                                "Diced tomatoes",
+                                "Onion",
+                                "Garlic",
+                                "Chili powder",
+                                "Cumin",
+                                "Salt",
+                                "Black pepper"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "CategoryName": "Vegetarian",
+            "Book": [
+                {
+                    "BookTitle": "Vegetarian Delights",
+                    "ISBN": "978-3456789012",
+                    "Recipes": [
+                        {
+                            "Recipe": "Black Pepper Tofu",
+                            "PreparationTime": "15 minutes",
+                            "Ingredients": [
+                                "Tofu",
+                                "Black pepper",
+                                "Soy sauce",
+                                "Garlic",
+                                "Ginger",
+                                "Green onions",
+                                "Vegetable oil"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "Blog": [
+                {
+                    "Title": "Vegetarian Kitchen",
+                    "Author": "Healthy Chef",
+                    "Address": "www.example.com/vegetarian-blog",
+                    "Recipes": [
+                        {
+                            "Recipe": "Vegetable Stir-Fry",
+                            "PreparationTime": "10 minutes",
+                            "Ingredients": [
+                                "Mixed vegetables",
+                                "Vegetable oil",
+                                "Garlic",
+                                "Soy sauce",
+                                "Sesame oil",
+                                "Honey"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

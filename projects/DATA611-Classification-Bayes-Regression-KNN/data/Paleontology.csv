@@ -1,0 +1,57 @@
+Specimen ID,Age (Myr),X coordinate,Y-coordinate,Taxonomy,Brain size,Body size,Age group,Data source,Dating method
+Arene Candide 4,0.011,8.3316,44.1643,Pleistocene Homo sapiens,1520,67.6,1,De Miguel & Henneberg 2001,C14
+Arene Candide 5,0.011,8.3316,44.1643,Pleistocene Homo sapiens,1661,66.5,1,De Miguel & Henneberg 2001,C14
+Arene Candide 2,0.012,8.3316,44.1643,Pleistocene Homo sapiens,1424,73.3,1,De Miguel & Henneberg 2001,C14
+Oberkassel 1,0.014,7.16,50.715,Pleistocene Homo sapiens,1492,83.8,1,Neubauer et al. 2018,C14
+Oberkassel 2,0.014,7.16,50.715,Pleistocene Homo sapiens,1330,75.1,1,Neubauer et al. 2018,C14
+Nacurrie,0.014,143.901,-35.398,Pleistocene Homo sapiens,1597,58.8,1,Brown 2017,C14
+San Teodoro 5,0.015,14.3524,38.0315,Pleistocene Homo sapiens,1484,66.9,1,Bailey & Geary 2009,C14
+Cap Blanc 1,0.018,1.0969,44.9456,Pleistocene Homo sapiens,1434,59.4,1,Bailey & Geary 2009,C14
+Chancelade,0.018,0.6661,45.2064,Pleistocene Homo sapiens,1700,67.4,1,Bailey & Geary 2009,C14
+St. Germain-la-Riviere,0.019,0.1071,44.8919,Pleistocene Homo sapiens,1354,59.2,1,Bailey & Geary 2009,C14
+Minatogawa 1,0.021,127.6792,26.2122,Pleistocene Homo sapiens,1390,63.3,1,Bailey & Geary 2009,C14
+Minatogawa 2,0.021,127.6792,26.2122,Pleistocene Homo sapiens,1170,48.6,1,Bailey & Geary 2009,C14
+Minatogawa 4,0.021,127.6792,26.2122,Pleistocene Homo sapiens,1090,47.4,1,Bailey & Geary 2009,C14
+Ohalo 2,0.023,35.5717,32.7198,Pleistocene Homo sapiens,1475,74.9,1,Neubauer et al. 2018,C14
+Abri Pataud 1,0.027,1.0125,44.9369,Pleistocene Homo sapiens,1323,69.7,1,Bailey & Geary 2009,C14
+Grotte des Enfants 4,0.028,7.5293,43.7866,Pleistocene Homo sapiens,1775,82.3,1,Bailey & Geary 2009,"Archaeology, Stratigraphy"
+Grotte des Enfants 5,0.028,7.5293,43.7866,Pleistocene Homo sapiens,1375,60.8,1,Bailey & Geary 2009,"Archaeology, Stratigraphy"
+Barma Grande 2,0.029,7.536,43.738,Pleistocene Homo sapiens,1880,82.3,1,Bailey & Geary 2009,"C14, Stratigraphy"
+Broken Hill (Kabwe),0.299,28.433,-14.45,Mid-Pleistocene Homo,1249,73.7,3,Neubauer et al. 2018,U-series
+Dolni Vestonice 13,0.031,16.626,48.882,Pleistocene Homo sapiens,1590,71.2,1,Neubauer et al. 2018,C14
+Dolni Vestonice 14,0.031,16.626,48.882,Pleistocene Homo sapiens,1663,79.4,1,Neubauer et al. 2018,C14
+Dolni Vestonice 15,0.031,16.626,48.882,Pleistocene Homo sapiens,1385,69.8,1,Neubauer et al. 2018,C14
+Dolni Vestonice 16,0.031,16.626,48.882,Pleistocene Homo sapiens,1542,78,1,Neubauer et al. 2018,C14
+Dolni Vestonice 3,0.031,16.626,48.882,Pleistocene Homo sapiens,1322,55.8,1,Bailey & Geary 2009,C14
+Cro Magnon 1,0.032,1.0372,44.9366,Pleistocene Homo sapiens,1574,70.3,1,Neubauer et al. 2018,C14
+Sunghir 1,0.033,40.51,56.18,Pleistocene Homo sapiens,1464,78.9,1,Bailey & Geary 2009,C14
+Mladec 1,0.035,17.019,49.701,Pleistocene Homo sapiens,1606,65.6,1,Neubauer et al. 2018,C14
+Mladec 2,0.035,17.019,49.701,Pleistocene Homo sapiens,1390,78.5,1,Holloway et al. 2004,C14
+Nazlet Khater 2,0.039,31.3748,26.7833,Pleistocene Homo sapiens,1420,67.7,1,Bailey & Geary 2009,C14
+Spy 2,0.04,4.7167,50.4833,Neanderthals,1531,81.4,1,Neubauer et al. 2018,C14
+Neandertal 1 (Feldhofer),0.04,6.9456,51.2275,Neanderthals,1261,82.6,1,Neubauer et al. 2018,C14
+La Ferrassie 1,0.044,0.938,44.9519,Neanderthals,1643,90.5,1,Neubauer et al. 2018,"OSL, C14"
+Shanidar 1,0.048,44.2208,36.8303,Neanderthals,1650,67.8,1,Bailey & Geary 2009,C14; Stratigraphy
+Shanidar 5,0.048,44.2208,36.8303,Neanderthals,1550,71.2,1,Bailey & Geary 2009,C14; Stratigraphy
+La Chapelle-aux-Saints,0.0515,1.725,44.987,Neanderthals,1490,81.7,1,Neubauer et al. 2018,ESR
+Amud 1,0.055,35.5016,32.8721,Neanderthals,1747,72.1,1,Neubauer et al. 2018,"TL, ESR, U-Th"
+Qafzeh 6,0.095,35.3,32.679,Pleistocene Homo sapiens,1525,46.7,1,Neubauer et al. 2018,"ESR, TL"
+Qafzeh 11,0.095,35.3,32.679,Pleistocene Homo sapiens,1280,59.9,1,Bailey & Geary 2009,"ESR, TL"
+Qafzeh 9,0.095,35.3,32.679,Pleistocene Homo sapiens,1497,64.4,1,Neubauer et al. 2018,"ESR, TL"
+Liujiang,0.0965,109.417,24.15,Pleistocene Homo sapiens,1480,42.7,1,Bailey & Geary 2009,"U-series, Stratigraphy"
+Skhul 4,0.115,34.9672,32.6707,Pleistocene Homo sapiens,1554.5,72.4,2,Bailey & Geary 2009,"ESR, TL, U-Th"
+Skhul 5,0.115,34.9672,32.6707,Pleistocene Homo sapiens,1363,76.9,2,Neubauer et al. 2018,"ESR, TL, U-Th"
+Skhul 9,0.115,34.9672,32.6707,Pleistocene Homo sapiens,1587,74,2,Bailey & Geary 2009,"ESR, TL, U-Th"
+Tabun C1,0.122,34.9661,32.6705,Neanderthals,1270.5,54.2,2,Bailey & Geary 2009,"ESR, U-series"
+Omo-Kibish 2,0.195,35.93,5.403,Pleistocene Homo sapiens,1491,54.1,2,Neubauer et al. 2018,"Ar-Ar, Sapropel correlation"
+Jinniushan 1,0.23,122.45,40.583,Mid-Pleistocene Homo,1317,77.4,3,Bailey & Geary 2009,"ESR, U-series"
+Sambungmacan 1,0.4,111.1308,-7.364,Mid-Pleistocene Homo,1056,68.2,5,Bailey & Geary 2009,"Ar-Ar, U-Series, ESR"
+SH Cranium 5,0.43,-3.514,42.3492,Mid-Pleistocene Homo,1092,69,5,Arsuaga et al. 2014,"U-series, Stratigraphy"
+SH Cranium 6,0.43,-3.514,42.3492,Mid-Pleistocene Homo,1225,83.3,5,Arsuaga et al. 2014;Juvenile but judged representatitive of adult (Arsuaga et al. 2014 Supplement S9),"U-series, Stratigraphy"
+SH Cranium 7,0.43,-3.514,42.3492,Mid-Pleistocene Homo,1143.5,58.3,5,Arsuaga et al. 2014,"U-series, Stratigraphy"
+SH Cranium 9,0.43,-3.514,42.3492,Mid-Pleistocene Homo,1201,73.8,5,Arsuaga et al. 2014;Juvenile but judged representatitive of adult (Arsuaga et al. 2014 Supplement S9),"U-series, Stratigraphy"
+Arago 21,0.438,2.755,42.839,Mid-Pleistocene Homo,1139,79.6,5,Bailey & Geary 2009,"ESR, U-series"
+Trinil 2,0.54,111.3543,-7.3663,Mid-Pleistocene Homo,940,50,6,Bailey & Geary 2009,Ar-Ar
+Zhoukoudian VI,0.77,115.917,39.683,Mid-Pleistocene Homo,850,51.6,8,Bailey & Geary 2009,"26Al/10Be, Paleomagnetism, Paleoenvironment"
+Zhoukoudian II,0.77,115.917,39.683,Mid-Pleistocene Homo,1030,54.8,8,Bailey & Geary 2009,"26Al/10Be, Paleomagnetism, Paleoenvironment"
+Zhoukoudian III,0.77,115.917,39.683,Mid-Pleistocene Homo,937.5,54.3,8,Bailey & Geary 2009,"26Al/10Be, Paleomagnetism, Paleoenvironment"

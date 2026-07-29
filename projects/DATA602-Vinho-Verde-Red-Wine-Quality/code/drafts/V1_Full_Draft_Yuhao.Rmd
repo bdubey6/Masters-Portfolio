@@ -1,0 +1,383 @@
+---
+title: "Investigating the Impact of Alcohol Content and pH Level on Red Wine Quality"
+author: "Yu Hao"
+date: "2025-10-06"
+output: pdf_document
+header-includes:
+  \usepackage{fvextra}
+  \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+---
+
+``` {r, message=FALSE, warning=FALSE}
+rm(list=ls(all=TRUE))
+library(ggplot2)
+library(mosaic)
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+# INTRODUCTION
+## Motivation
+
+  Our project focuses on the various chemical factors that contribute to the final perceived quality of red wines. Understanding how alcohol content and sugar content impact the perceived quality of red wines will help production plants identify what chemical factors to control for in the production of red wine and help retailers set more accurate prices based on predicted wine quality of the *Vinho Verde* red wines. Further, analyzing the relationship between chemical factors and quality of red wine helps consumers make better decisions when buying red wine.
+
+## Background
+
+  Wine has become increasingly popular beyond luxury markets, and for major exporters like Portugal, ensuring quality is essential for both consumer trust and economic growth. Since taste is difficult to measure and not properly understood, wine quality tests usually combine chemical tests (such as acidity, alcohol, and pH) with expert sensory evaluations. The alcohol content and pH are important parameters that shape the sensory and chemical quality of red wines. Alcohol influences body, warmth, and aroma release, but excessive levels can create imbalance and influence varietal character (Waterhouse et al., 2016). The pH governs acidity perception, color stability, tannin structure, and microbial safety, with lower pH enhancing freshness and long-term stability (Giuffrida et al, 2019). Thus the interplay of alcohol and pH is essential to balance as high alcohol with high pH produces heavy, unstable wines, while balanced values results in vibrancy and harmony (Boulton, 1980; Keller, 2015). Exploring the links between these chemical factors and perceived quality can help winemakers refine their processes and assist retailers in identifying higher-quality wines.
+
+We used the winequality-red.csv dataset from Kaggle in our analysis of *Vinho Verde* red wines. 
+
+This sample of 1599 red wines was collected over a period of 3 years between May 2004 and February 2007 from production plants producing *Vinho verde* located in the northwestern region of Portugal. The dataset contains information on a plethora of chemical factors recorded during the production of the red wines along with a quality score which was determined through a standard physicochemical test by three separate assessors. 
+
+## Guiding Questions 
+\begin{center}
+**Question 1: Does high quality *Vinho Verde* red wines have a significantly higher alcohol content compared to wines with low quality?**
+
+**Question 2: Is the pH level of the resultant *Vinho Verde* red wine significantly correlated with its perceived quality?**
+\end{center}
+
+In our analysis of these questions we will be using an alpha level of 0.05, $\alpha=0.05$.
+
+## Variables of Interest
+
+For our questions we are only interested in the % alcohol content (alcohol), pH level (pH), and quality score (quality) variables included in the wine-quality dataset. 
+
+The % alcohol content variable records the percentage alcohol content of the red wine by volume and is a continuous numerical variable. 
+
+The pH level variable contains the pH of the final red wine product and is also a continous nuermical variable. 
+
+Finally, the quality score variable records the perceived quality of the red wine based on sensory tests. The wines are ranked ordinally from 0 to 10, with 10 being the best. For our analysis we will be dividing the quality of the red wines into low quality group which will contain wines with a quality score of 5 and below, and a high quality group which will contain wines with a quality score of 6 and above. 
+
+# DATA EXPLORATION
+
+## Data Wrangling and Summary Statistics
+``` {r 1.a1}
+wine.df<-read.csv("C:\\Users\\yuhao\\Desktop\\Uni\\DATA 602\\winequality-red.csv")
+
+quality.cat<-c()
+for (i in wine.df$quality){
+  if (i <= 5){quality.cat<-c(quality.cat, "Low")}
+  else {quality.cat<-c(quality.cat, "High")}
+}
+
+wine.df<-data.frame(wine.df, quality.cat)
+```
+
+Since we are interested in dividing the red wines into high quality and low quality groups, we created a new variable in the data set to reflect whether or not the bottle of red wine has a quality score of above 5 or not. If the wine has a quality score of 5 and below we assigned it to the low quality group, otherwise we assigned it to the high quality group.
+
+``` {r 1.a2}
+favstats(~alcohol|quality.cat, data=wine.df)
+```
+There are about equal number of observations in each quality group from this data set of red wines. The high quality group had a few more observations at $n$=855 compared to the low quality group at $n$=744. 
+
+The summary statistics of the % alcohol content of the red wines shows that the mean % alcohol content is similar between the two quality groups. For the low quality red wine group the average % alcohol content is 9.93% $\pm$ 0.76% and for the high quality group, the average % alcohol content is 10.86% $\pm$ 1.10%. There are no missing values in % alcohol content for either quality groups. 
+
+``` {r 1.a3}
+favstats(wine.df$pH)
+```
+The summary statistics for the pH levels in the red wine dataset shows that the mean pH level is 3.31 $\pm$ 0.15. The most acidic bottle in this sample has a pH of 2.74 while the most basic has a pH of 4.01, the median of the pH levels is 3.31 which is very close to the mean. There are no missing values in the pH level variable.  
+
+## Visual Representation of Data
+``` {r 1.b1}
+wine.df$quality1<-factor(wine.df$quality)
+
+quality.plot<-ggplot(wine.df, aes(x=quality1, fill=quality.cat))+
+  geom_bar()+
+  scale_fill_manual(values=c("Low"="#F8766D", "High"="#00BFC4"))+
+  theme_minimal(base_size=13)+
+  labs(
+    title="Count of Red Wines by Quality Score",
+    subtitle="Vinho Verde Red Wines (Low vs High Quality)",
+    x="Quality Score",
+    y="Count",
+    fill="Quality")+
+  theme(
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"))
+quality.plot$labels$fill<-"Red Wine Quality"
+quality.plot
+```
+The distribution of red wine quality is highly centralized around the ratings of 5 and 6 which together accounts for the majority of the samples included in this dataset. There are very few wines which has extreme quality scores of 3-4 or 7-8. 
+
+The division between the low quality and high quality groups is relatively balanced, suggesting that the dataset captures a representative mix of both high quality and low quality red wines. This balance ensures that our analysis comparing differences between the high quality and low quality groups of red wines remains relatively unbiased.
+
+``` {r 1.b2}
+ggplot(wine.df, aes(x=quality.cat, y=alcohol, fill=quality.cat))+
+  geom_violin(trim=FALSE, alpha=0.5, color="black")+
+  geom_boxplot(width=0.15, outlier.shape=16, outlier.size=1.5, color="black", fill="white")+
+  scale_fill_manual(values=c("Low"="#F8766D", "High"="#00BFC4"))+
+  theme_minimal(base_size=13)+
+  labs(
+    title="% Alcohol Content by Wine Quality Level",
+    subtitle="Vinho Verde Red Wines (Low vs High Quality)",
+    x="Red Wine Quality",
+    y="Alcohol (% by volume)",
+    fill="Quality")+
+  theme(
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"),
+    legend.position="none")
+```
+This violin plot illustrates the distribution of alcohol content in Vinho Verde red wines, comparing low-quality and high-quality categories. The high-quality wines seem to have higher alcohol content, with a median appearing higher than the low-quality wines. The distribution for high-quality wines is also more spread out, indicating greater variability in alcohol levels. The wider areas of each violin represent where more data points are concentrated, showing that alcohol percentage varies more widely among high-quality wines. Overall, the plot suggests that higher alcohol content is associated with higher wine quality.
+
+``` {r 1.b3}
+ggplot(wine.df, aes(x=quality.cat, y=pH, fill=quality.cat))+
+  geom_violin(trim=FALSE, alpha=0.5, color="black")+
+  geom_boxplot(width=0.15, outlier.shape=16, outlier.size=1.5, color="black", fill="white")+
+  scale_fill_manual(values=c("Low"="#F8766D", "High"="#00BFC4"))+
+  theme_minimal(base_size=13)+
+  labs(
+    title="pH Content by Wine Quality",
+    subtitle="Vinho Verde Red Wines (Low vs High Quality)",
+    x="Red Wine Quality",
+    y="pH",
+    fill="Quality")+
+  theme(
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"),
+    legend.position="none")
+```
+This violin plot displays the distribution of pH levels in Vinho Verde red wines, comparing low-quality and high-quality categories. Both groups visually show similar median pH values, potentially indicating that pH does not vary much between wine quality levels. The distributions are also similar in shape and spread, suggesting that acidity is not a strong distinguishing factor between low- and high-quality wines. Overall, wine quality visually appears to be relatively independent of pH content in this dataset with needed statistical analysis for confirmation.
+
+# Hypothesis Testing
+
+## Question 1: Do high quality *vinho verde* red wines have significantly higher % alcohol content compared to low quality *vinho verde* red wines? 
+
+### Statistical Hypotheses
+Let $\mu$ represent the average % alcohol content found in a group of red wines. 
+$$
+\begin{aligned}
+H_0&:\mu_{\text{High Quality}}\leq\mu_{\text{Low Quality}}\\
+H_0&:\mu_{\text{High Quality}}>\mu_{\text{Low Quality}}
+\end{aligned}
+$$
+
+### Assumption Checking
+Low quality red wine % alcohol content normality check
+``` {r 2.a1}
+ggplot(data=subset(wine.df, quality.cat=="Low"), aes(sample=alcohol))+
+  stat_qq(col="blue")+
+  stat_qq_line(col="red")+
+  theme_minimal(base_size=13)+
+  labs(title="Normal Probability Plot of % Alcohol Content in Red Wine (Low Quality)")+
+  theme(plot.title=element_text(face="bold", size=15))
+shapiro.test(subset(wine.df, quality.cat=="Low")$alcohol)
+```
+The distribution of the % alcohol content in the low quality red wine group does not appear to be normal from the Normal Probability Plot. The % alcohol distribution does not follow the qqnorm line and deviates greatly at the ends of the distribution. This result is confirmed by the Shapiro Wilks test for normality which indicates that the % alcohol content for the low quality red wine group is not normally distributed.
+
+High quality red wine % alcohol content normality check
+``` {r 2.a2}
+ggplot(data=subset(wine.df, quality.cat=="High"), aes(sample=alcohol))+
+  stat_qq(col="blue")+
+  stat_qq_line(col="red")+
+  theme_minimal(base_size=13)+
+  labs(title="Normal Probability Plot of % Alcohol Content in Red Wine (High Quality)")+
+  theme(plot.title=element_text(face="bold", size=15))
+shapiro.test(subset(wine.df, quality.cat=="High")$alcohol)
+```
+While the % alcohol content distribution for the high quality red wine group follows the qqnorm line more closely, it is still not approximately normally distributed. As shown in the Normal Probability Plot the left end of the distribution deviates greatly from the qqnorm line. Similarly, this result is confirmed by the Shapiro Wilk's test for normality which indicates that the % alcohol content for the high quality red wine group does not follow a normal distribution. 
+
+Since the % alcohol content for both quality groups has been shown to be not normal, we proceed with a non-parametric permutation test for the difference in average % alcohol content between the high quality and low quality red wine groups. 
+
+### Analysis
+``` {r 2.a3}
+threshold<-mean(subset(wine.df, quality.cat=="High")$alcohol)-mean(subset(wine.df, quality.cat=="Low")$alcohol)
+threshold
+
+# Permutation test with 5000 iterations
+n<-length(wine.df$alcohol) # 1599
+n.high<-length(subset(wine.df, quality.cat=="High")$alcohol)
+n.low<-length(subset(wine.df, quality.cat=="Low")$alcohol)
+# High = 855;  Low = 744
+
+set.seed(1111)
+N=4999
+permvector=numeric(N)
+for (i in 1:N)
+{
+  index=sample(n, n.high, replace = FALSE)
+  permvector[i] = mean(wine.df$alcohol[index])-mean(wine.df$alcohol[-index])
+}
+
+hist(permvector, breaks=pretty(range(permvector), n=20),
+     xlab="Difference Between % Alcohol Content in Red Wine (High - Low)",
+     ylab="Frequency",
+     main="Outcome of 5000 Permutation Tests",
+     col="blue")
+abline(v=threshold, col = "red")
+
+# finding p-value for right-tailed hypothesis test
+(sum(permvector>= threshold)+1)/(N+1)
+```
+The empirical p-value from the permutation test is 0.0002 which is smaller than $\alpha=0.05$. This suggest that the observed differences in average % alcohol content between the high and low proportions are unlikely to be due to chance. We reject the null hypothesis and conclude that high quality red wines have significantly higher % alcohol content compared to low quality red wines. 
+
+``` {r 2.a4}
+set.seed(1111)
+bootvector=numeric(5000)
+low_col=wine.df$alcohol[wine.df$quality.cat=="Low"]
+high_col=wine.df$alcohol[wine.df$quality.cat=="High"]
+
+for (i in 1:5000)
+{
+  low_qual=mean(sample(low_col, length(low_col), replace = TRUE), na.rm = TRUE)
+  high_qual=mean(sample(high_col, length(high_col), replace = TRUE), na.rm = TRUE)
+  bootvector[i]=high_qual-low_qual
+}
+
+bootvector.df=data.frame(bootvector)
+
+ggplot(bootvector.df, aes(x=bootvector))+
+  geom_histogram(aes(y=after_stat(density)), col="black", fill="skyblue")+
+  geom_density(col="red", size=1.2)+
+  theme_minimal()+
+    labs(
+    title="Bootstrap Distribution of Mean Differences in % Alcohol Content",
+    subtitle="High-quality vs Low-quality Vinho Verde Red Wines",
+    x="Bootstrap Mean Difference in % Alcohol Content (High - Low)",
+    y="Density"
+  )+
+  theme(
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"),
+  )
+  
+qdata(~bootvector, p = c(0.025,0.975), data = bootvector.df)
+```
+From the bootstrap, we can be 95% confident that high quality red wines have about 0.84% to 1.02% alcohol content compared to low quality red wines. 
+
+## Question 2: Is the pH level of the resultant *Vinho Verde* red wine significantly correlated with its perceieved quality?
+
+### Statistical Hypotheses
+$$
+\begin{aligned}
+H_0&:\text{The quality of the red wine is independent from the pH level of the red wine}\\ 
+H_A&:\text{The quality of the red wine is not independent from the pH level of the red wine}\\
+\end{aligned}
+$$
+
+### Category Divisions
+Following the same notation established at the beginning of the report, low quality wine is defined as red wines with a quality score of 5 and less while high quality wine is defined as red wines with a quality score of 6 and more. 
+
+The continuous pH variable was categorized using two different approaches.
+
+Chemical based cutoffs:
+According to standard wine literature, the typical pH range for red wines lies between 3.30 and 3.60, with wines below pH 3.20 considered to have high acidity and wines above 3.50 considered low in acidity. Based on these references, we defined 3 pH categories to aid interpretation. < 3.20 for high acidity, 3.20-3.50 for moderate acidity, and > 3.50 for low acidity.  
+
+Balanced cutoffs:
+To ensure approximately balanced group sizes for the chi-squared test, pH was divided into 4 quartiles based on the summary stats shown under the Data Exploration section. 2.74-3.21 for high acidity, 3.21-3.31 for high moderate acidity, 3.31-3.40 for low moderate acidity, and 3.40-4.01 for low acidity. 
+
+### Data Wrangling and Assumption Checking
+``` {r 2.b1}
+pH.cat.chem<-c()
+for (i in wine.df$pH){
+  if (i <= 3.2){pH.cat.chem<-c(pH.cat.chem, 1)}
+  else if (i > 3.2 & i <= 3.5){pH.cat.chem<-c(pH.cat.chem, 2)}
+  else{pH.cat.chem<-c(pH.cat.chem, 3)}
+}
+
+pH.cat.bal<-c()
+for (i in wine.df$pH){
+  if (i <= 3.21){pH.cat.bal<-c(pH.cat.bal, 1)}
+  else if (i > 3.21 & i <= 3.31){pH.cat.bal<-c(pH.cat.bal, 2)}
+  else if (i > 3.31 & i <= 3.40){pH.cat.bal<-c(pH.cat.bal, 3)}
+  else{pH.cat.bal<-c(pH.cat.bal, 4)}
+}
+
+wine.df<-data.frame(wine.df, pH.cat.chem, pH.cat.bal)
+```
+Added 2 new variables to each red wine observation, categorizing them into different pH levels based off of their pH value. 
+
+``` {r 2.b2}
+ct.chem<-c()
+quality<-c("Low", "High")
+for (i in quality){
+  for (j in 1:3){
+    ct.chem<-c(ct.chem,length(subset(wine.df, quality.cat==i & pH.cat.chem==j)$quality))
+  }
+}
+
+chem.ct<-rbind(c(189, 473, 82), c(199, 570, 86))
+rownames(chem.ct)<-c("Low Quality", "High Quality")
+colnames(chem.ct)<-c("High Acidity", "Moderate Acidity", "Low Acidity")
+
+ct.bal<-c()
+for (i in quality){
+  for (j in 1:4){
+    ct.bal<-c(ct.bal,length(subset(wine.df, quality.cat==i & pH.cat.bal==j)$quality))
+  }
+}
+
+bal.ct<-rbind(c(200, 186, 173, 185), c(224, 212, 217, 202))
+rownames(bal.ct)<-c("Low Quality", "High Quality")
+colnames(bal.ct)<-c("High Acidity", "High Moderate Acidity", "Low Moderate Acidity", "Low Acidity")
+```
+Created the the chemical and balanced cross tables, sorting each red wine observation into its individual category. We will check for the condition that all categories has at least 5 observations. 
+
+``` {r 2.b3}
+wine.df$pH.cat.chem1<-factor(wine.df$pH.cat.chem,levels=c(1, 2, 3),
+  labels=c("High Acidity", "Moderate Acidity", "Low Acidity"))
+
+chem.ct.plot<-ggplot(data=wine.df, aes(x=pH.cat.chem1, fill=quality.cat))+
+  geom_bar(position="dodge")+
+  theme_minimal(base_size=13)+
+  labs(
+    title="Count of Red Wine Quality within Each pH Level",
+    x="Count",
+    y="pH Level",)+
+  theme(
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"))
+chem.ct.plot$labels$fill<-"Red Wine Quality"
+chem.ct.plot
+chem.ct
+```
+As shown by the bar plot and cross table above, each category in the chemically determined pH value categories has at least 5 observations. 
+
+``` {r 2.b4}
+wine.df$pH.cat.bal1<-factor(wine.df$pH.cat.bal,levels=c(1, 2, 3, 4),
+  labels=c("High Acidity", "High Moderate Acidity", "Low Moderate Acidity", "Low Acidity"))
+
+bal.ct.plot<-ggplot(data=wine.df, aes(x=pH.cat.bal1, fill=quality.cat))+
+  geom_bar(position="dodge")+
+  theme_minimal(base_size=13)+
+  labs(
+    title="Count of Red Wine Quality within Each pH Level",
+    x="Count",
+    y="pH Level",)+
+  theme(
+    axis.text.x=element_text(angle=20, hjust=1),
+    plot.title=element_text(face="bold", size=15),
+    plot.subtitle=element_text(size=11, color="gray30"))
+bal.ct.plot$labels$fill<-"Red Wine Quality"
+bal.ct.plot
+bal.ct
+```
+As shown in the bar plot and cross table above, each category in the quartile pH value categories has at least 5 observations. 
+
+### Analysis
+
+Chi-squared test of independence for chemically determined pH cutoffs. 
+``` {r 2.b5}
+xchisq.test(chem.ct, correct=F)
+```
+$\chi^2$ statistic = 1.68 and p-value = 0.43.
+
+Chi-squared test of independence for quartile pH cutoffs. 
+``` {r 2.b6}
+xchisq.test(bal.ct, correct=F)
+```
+$\chi^2$ statistic = 1.07 and p-value = 0.78.
+
+The p-value for the chemically determined pH cutoffs is 0.43 and the p-value for the quartile determined pH cutoffs is 0.78. Both p-values are greater than the set alpha level of 0.05. Therefore, we fail to reject our null hypothesis and conclude that the quality of red wines are not significantly dependent on the pH level of the red wines. 
+
+# CONCLUSION
+## Interpretation of Results 
+1) Do high quality *Vinho Verde* red wines have a significantly higher alcohol content compared to low quality wines? 
+
+Through a permutation test we found the 
+
+2) Is the pH level of vinho verde red wine significantly correlated with its perceived quality?
+
+
+
+## Future Direction

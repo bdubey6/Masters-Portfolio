@@ -1,0 +1,329 @@
+---
+title: "Data 602 - Assignment Four, Part I"
+output: html_notebook
+---
+
+date: "Due October 3, 2025 @ 11:59pm"
+
+Attempt all problems below. You will be required to complete this assignment in R Notebook or R Markdown. Convert your work to a .pdf file and submit to Gradescope using the link provided in the Assignment 4 folder.
+</br>
+</br>
+Ensure you justify all computation and data visualizations with accompanying code. 
+</br>
+</br>
+
+**1:10 marks** 
+A Canadian research team investigated the effect of high-dose vitamin D supplementation on sleep quality in adults aged 40–60 years. Participants were randomly assigned to two groups:
+
+**Group A (n = 15): Received 4,000 IU/day of vitamin D for 12 weeks**. After the intervention, their Pittsburgh Sleep Quality Index (PSQI) scores were: 8, 9, 10, 7, 9, 10, 8, 9, 8, 10, 9, 8, 7, 9, 8
+
+**Group B (n = 16): Received a placebo for 12 weeks**. After the intervention, their PSQI scores were: 11, 12 , 9,  9 , 9 ,10,  9 ,11, 11,  8, 11, 11, 10 , 9, 10,  9
+
+Sleep quality was measured using the PSQI, which ranges from 0 to 21, with higher scores indicating poorer sleep quality.
+
+(a) Do these data indicate that sleep quality is better with Vitamin D supplementation than without? Carry out the appropriate statistical investigation using a permutation test. Ensure you show where your observed test statistic lies on the permutation distribution. Report your empirical P-value and provide your statistical inference. Use 2,999 permutations for the test. Use $\alpha=0.05$
+H₀: No difference in mean PSQI between groups.
+$$
+Ho=\mu VitD =  \mu Placebo
+$$
+Ha: Vitamin D group has lower mean PSQI than placebo.
+$$
+Ha= \mu VitD < \mu Placebo
+$$
+
+```{r}
+groupA = c(8, 9, 10, 7, 9, 10, 8, 9, 8, 10, 9, 8, 7, 9, 8)
+groupB = c(11, 12, 9, 9, 9, 10, 9, 11, 11, 8, 11, 11, 10, 9, 10, 9)
+obs_diff = mean(groupB) - mean(groupA)
+
+all_scores = c(groupA, groupB)
+nA = length(groupA)
+n_perm = 2999
+
+perm_diffs = replicate(n_perm, {
+  shuffled = sample(all_scores)
+  mean(shuffled[(nA+1):length(all_scores)]) - mean(shuffled[1:nA])})
+
+p_perm = mean(perm_diffs >= obs_diff)
+p_perm
+```
+
+```{r}
+hist(perm_diffs, breaks=30, 
+     main="Permutation Distribution of Mean Differences",
+     xlab="Mean Difference (Placebo - Vitamin D)")
+abline(v=obs_diff, col="yellow", lwd=2)
+```
+The permutation distribution of the difference in mean PSQI scores is centered near zero, consistent with what we would expect under the null hypothesis of no group difference. The observed test statistic (yellow line) lies far in the upper tail of this distribution. The corresponding empirical p-value is much smaller than the significance level of 0.05. Therefore, we reject the null hypothesis and conclude that Vitamin D supplementation is associated with significantly better sleep quality (lower PSQI scores) compared to placebo.
+
+
+(b) Re-test your statistical hypothesis in part (a) using the $t$-test. In doing so, state any assumptions about these data or conditions you are imposing on these data and conduct the necessary diagnostics to either confirm or refute such assumptions. Ensure you provide both the $P$-value and its interpretation related to these data.
+```{r}
+#visualization
+boxplot(groupA, groupB, names=c("Vitamin D", "Placebo"), main="Boxplot of PSQI by Group", ylab="PSQI Score")
+
+# Normality check with QQ plots
+par(mfrow=c(1,2))
+qqnorm(groupA, main="QQ Plot - Vitamin D"); qqline(groupA)
+qqnorm(groupB, main="QQ Plot - Placebo"); qqline(groupB)
+par(mfrow=c(1,1))
+
+# Welch's two-sample t-test
+t_test = t.test(groupA, groupB, alternative="less", var.equal=FALSE)
+t_test
+```
+
+The QQ plots for both groups show points that generally follow the straight line, with only minor deviations at the tails. This suggests that the normality assumption is not seriously violated. The boxplot also shows reasonably symmetric distributions with no extreme outliers. Thus, the assumptions for the two-sample t-test appear acceptable.
+
+The Welch two-sample t-test produced a test statistic of t ≈ –3.53 with about 29 degrees of freedom and a one-sided p-value well below 0.05. This indicates strong evidence that the mean PSQI score in the Vitamin D group is lower than in the placebo group.
+
+At the 5% significance level, we reject the null hypothesis and conclude that Vitamin D supplementation significantly improves sleep quality. The result is consistent with the conclusion from the permutation test in part (a).
+
+</br>
+
+**2:11 marks** In a 1988[^1] case , *McCleskey v. Zant*, lawyers for the defendent demonstrated that amongst all African-American convicted murderers in the state of Georgia, 35% were found guilty of killing caucasians and 6% of those who killed African-Americans received the death penalty. As a result, the lawyers claimed that racial discrimination was a factor in sentencing. This was contested by lawyers for the State of Georgia. They argued that "murders of black victims were more likely to be unaggravated bar-room brawls, liquor-induced arguments, or lovers quarrels" - crimes that rarely result in a death sentence. But, amongst white-victims, there was a higher proportion of killings committed in the course of an armed robbery or involving torture - which more often result in death sentences. 
+
+The table below summarizes data for all African-American convicted murders in Georgia, resulting from difference categories of crime. (For example, Agggravation Level 1 consists of bar-room brawls, liquor-induced arguments, etc., Aggravation Level 6 includes the most vicious, cold-blooded, unprovoked crimes).
+
+$$
+\begin{array}{lcc}
+                    & \text{Sentenced to Death} &  \text{Not Sentenced to Death}  \\
+\text{Victim was Caucasian}   & 45            & 85                 \\
+\text{Victim was African-American}   & 14            & 218                 \\
+\end{array}
+$$
+
+(a) Visualize these data with a bar-graph (see Assignment One) that appropriately summarizes these counts.
+```{r}
+victim_race = c("Caucasian", "Caucasian", "African-American", "African-American")
+sentence = c("Death", "Not Death", "Death", "Not Death")
+count = c(45, 85, 14, 218)
+
+# Bar plot
+ggplot(data2, aes(x = victim_race, y = count, fill = sentence)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Death Penalty Sentences by Victim Race",
+       x = "Victim Race",
+       y = "Number of Cases") +
+  scale_fill_manual(values = c("red", "grey"))
+```
+The bar plot shows that African-American defendants were more likely to get the death penalty when the victim was Caucasian. When the victim was African-American, the death penalty was given far less often. Most cases did not result in a death sentence overall, but the chance of a death sentence was clearly higher when the victim was Caucasian.
+
+(b) Calculate the observed difference between the two sample proportions of those sentenced to death, comparing Caucasian victims (Sample 1) with African-American victims (Sample 2). Does this observed difference appear to be due to chance, or does it suggest that African-Americans convicted of murdering Caucasian victims are more likely to receive the death penalty than those convicted of murdering African-American victims? Carry out a permutation test using 1,999 permutations.$\alpha=0.05$
+```{r}
+death = c(45, 14)
+total = c(45+85, 14+218)
+victim = c("Caucasian", "African-American")
+
+prop = death / total
+names(prop) = victim
+prop
+
+obs_diff = prop[1] - prop[2]
+obs_diff
+```
+
+```{r}
+n_perm = 1999
+
+# Response vector: death = 1, no death = 0
+death_outcomes = c(rep(1, 45), rep(0, 85), rep(1, 14), rep(0, 218))
+
+# Group labels: victim race
+labels = c(rep("Caucasian", 130), rep("African-American", 232))
+
+# Permutation distribution
+perm_diffs = replicate(n_perm, {
+  shuffled = sample(labels)
+  prop_cauc = mean(death_outcomes[shuffled == "Caucasian"])
+  prop_afam = mean(death_outcomes[shuffled == "African-American"])
+  prop_cauc - prop_afam
+})
+
+# Empirical p-value
+p_perm = mean(perm_diffs >= obs_diff)
+p_perm
+```
+A p-value of 0 means that in none of the 1,999 permutations did we observe a difference as large as 0.286 just by chance. 
+
+```{r}
+hist(perm_diffs, breaks = 30,
+     main = "Permutation Distribution of Proportion Difference",
+     xlab = "Difference in Death Sentence Proportions",
+     col = "lightblue",
+     xlim = range(c(perm_diffs, obs_diff)))
+abline(v = obs_diff, col = "red", lwd = 2)
+```
+The proportion of African-American defendants sentenced to death was 34.6% when the victim was Caucasian and 6.0% when the victim was African-American, resulting in an observed difference of 0.286. A permutation test with 1,999 iterations produced a p-value of 0, indicating that a difference this large would be extremely unlikely if victim race had no effect. This provides strong evidence to reject the null hypothesis and suggests that African-American defendants convicted of murdering Caucasian victims are significantly more likely to receive the death penalty than those convicted of murdering African-American victims.
+
+
+(c) Do these data suggest that the race of the victim does appear to affect whether an African-American convicted of murder in Georgia will receive a death sentence? Interpret your findings. Should you reject the null hypothesis, provide an interval with 95% coverage/confidence. 
+
+```{r}
+B = 1999  # Number of bootstrap replicates
+
+boot_diffs = replicate(B, {
+  samp_cauc = sample(c(rep(1,45), rep(0,85)), replace = TRUE)
+  samp_afam = sample(c(rep(1,14), rep(0,218)), replace = TRUE)
+  mean(samp_cauc) - mean(samp_afam)
+})
+
+quantile(boot_diffs, c(0.025, 0.975))
+```
+A bootstrap analysis with 1,999 replicates produced a 95% confidence interval for the difference in proportions of [0.196, 0.368]. Since this interval is entirely above zero, it reinforces the conclusion that victim race significantly affects death penalty sentencing. 
+So we are 95% confident that the true difference in death sentence probabilities between cases with Caucasian victims and African-American victims lies between roughly 20% and 37%. This supports the finding that African-American defendants are more likely to receive the death penalty when the victim is Caucasian.
+
+
+[^1]:https://caselaw.findlaw.com/us-supreme-court/499/467.html
+
+</br>
+
+**3:9 marks** Refer to a question from Assignment 1, where you were asked to refer to certain variables of the General Society Survey of 2002. For your convenience, the data file is linked below. 
+```{R}
+gss= read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/GSS2002.csv")
+```
+
+(a) Is there a relationship between one's support for gun laws (variable name is **GunLaw**) and their opinion about current government spending on Science (variable name is **SpendSci**)? State the appropriate statistical hypotheses. 
+Null hypothesis: There is no association between GunLaw and SpendSci.
+
+Alternative hypothesis: There is an association between GunLaw and SpendSci.
+
+(b)  Carry out the appropriate statistical test, providing both the test statistic and the $P$-value.
+```{r}
+# contingency table
+table_gun_science = table(gss$GunLaw, gss$SpendSci)
+
+# Chi-squared test of independence
+chi_test = chisq.test(table_gun_science)
+chi_test
+```
+
+
+(c) What can you conclude? Do these data support your null hypothesis in part (a)? State your decision and conclusion.
+Since the p-value is greater than 0.05, the result is not statistically significant. The chi-squared test tells us that we fail to reject the null hypothesis. This shows that there is no evidence of a relationship between support for gun laws and opinions about government spending on science. 
+
+(d) Re-trace your result, in the form of a bar-graph, that was provided in Assignment 1, Question 9. Can you infer from these data that one's level of **Education** is independent of their **Race**? Present your findings in the form of a paragraph, outlining the decision you have made, why you made the decision you made, and the $P$-value. 
+
+```{r}
+ggplot(data = gss) + 
+  geom_bar(aes(x = Education, fill = Race), position = "dodge") +
+  labs(title = "Count of Race within Education Levels",
+       x = "Education Level",
+       y = "Number of Respondents",
+       fill = "Race")
+```
+
+
+```{r}
+table_edu_race = table(gss$Education, gss$Race)
+chi_edu_race = chisq.test(table_edu_race)
+chi_edu_race
+```
+Since the p-value is far less than 0.05, we reject the null hypothesis of independence. There is strong statistical evidence that an individual’s level of education is not independent of their race. The distribution of education levels varies significantly across different racial groups. This is consistent with the bar graph, which shows that white racial groups are more represented in education categories than others.
+
+</br>
+
+**4:4 marks** A recent Ipsos poll[^2] asked Americans from different generations whether they support a four-day workweek. The results are summarized in the table below,
+
+
+$$
+\begin{array}{lcccc}{Generation / Opinion} & \textbf{Strongly Support} & \textbf{Somewhat Support} & \textbf{Neither} & \textbf{Somewhat Oppose} & \textbf{Strongly Oppose} & \textbf{Total} \\
+\hline
+Gen Z          & 24  & 14  & 16  & 9  & 0  & 62  \\
+Millennials    & 95  & 44  & 25  & 7  & 5  & 176 \\
+Gen X          & 85  & 45  & 45  & 8  & 4  & 189 \\
+Baby Boomers   & 59  & 32  & 31  & 11 & 7  & 141 \\
+\hline
+\textbf{Total} & 263 & 135 & 117 & 35 & 16 & 568 \\
+\end{array}
+$$
+Do these data provide statistically significant evidence to conclude that there is an association between a worker’s generation and their opinion on moving to a four-day workweek? Use$\alpha= 0.05$
+Null hypothesis: Worker generation and opinion on a four-day workweek are independent.
+
+Alternative hypothesis: Worker generation and opinion on a four-day workweek are not independent.
+
+
+```{r}
+conttable.oct <- matrix(
+  c(24,14,16, 9, 0,   # Gen Z
+    95,44,25, 7, 5,   # Millennials
+    85,45,45, 8, 4,   # Gen X
+    59,32,31,11, 7),  # Baby Boomers
+  nrow = 4,
+  byrow = TRUE
+)
+
+# Add row and column names
+rownames(conttable.oct) <- c("Gen Z", "Millennials", "Gen X", "Baby Boomers")
+colnames(conttable.oct) <- c("Strongly Support", "Somewhat Support", 
+                               "Neither", "Somewhat Oppose", "Strongly Oppose")
+
+conttable.oct
+```
+```{r}
+chisq.test(conttable.oct, simulate.p.value = TRUE)
+```
+Since p-value < 0.05, we reject the null hypothesis.
+There is statistically significant evidence at the 5% level to conclude that a worker’s generation is associated with their opinion on moving to a four-day workweek. So opinions are not independent of generation.
+
+</br>
+
+**5:11 marks** A  study conducted by Youmans and Jee[^3] looked at students who took a research methods class in psychology. Two lecture sections of the same course were taught by the same instructor.  Students in each lecture section were required to register in one of two Friday afternoon discussion sections, or a  tutorial. During the ninth week of instruction, all students were asked to fill out an informal midsemester evaluation in their Friday afternoon discussion session. 
+
+In half of the Friday afternoon discussion sections, the experimenter (not the professor/instructor!) passed around a bag containing small bars of chocolate that he simply had 'left-over' and 'wanted to get rid of'  so that students would not think the chocolate was a gift from their professor/instructor. The evaluation was a survey that contained nine questions. For each question the student provided a rating from 1 (very poor) to 5 (excellent). 
+
+Question 9 posed the following:
+
+</br>
+<center>
+**``Compared to other instructors you have had at this university, this instrutor is:''  1 (very poor) to 5 (excellent)**
+</center>
+</br>
+
+Compliments to the authors, they have provided me with the data in this particular study. In the [file](https://github.com/Statman44/Data602/blob/main/chocnochocratings.csv) you will find the raw data providing the student responses for Question 9 (**Q9**) and the overall average response for Questions 1 through 9 (**Overall**) for each student.
+*Note: To easily read this into your R session, select the "Raw" button prior, then use the resulting URL.*
+
+(a) Pertaining to Question 9: Do these data suggest there is a treatment effect? Test the existence of a treatment effect using a permutation test. If a treatment effect is discovered, explain its meaning in the context of these data. Carry out a permutation test, using 1999 iterations.  
+</br>
+(You will have to carefully consider "what a treatment effect" is in this scenario.)
+```{r}
+choc = read.csv("https://raw.githubusercontent.com/Statman44/Data602/main/chocnochocratings.csv")
+head(choc)
+```
+```{r}
+obs_diff = mean(choc$Q9[choc$GroupName=="Chocolate"]) -
+             mean(choc$Q9[choc$GroupName=="NOChoc"])
+obs_diff
+```
+```{r}
+n_perm = 1999
+
+perm_diffs = replicate(n_perm, {
+  shuffled = sample(choc$GroupName)  
+  mean(choc$Q9[shuffled=="Chocolate"]) -
+    mean(choc$Q9[shuffled=="NOChoc"])
+})
+
+p_perm = mean(abs(perm_diffs) >= abs(obs_diff))
+p_perm
+```
+
+The permutation p-value is much larger than α = 0.05, so we fail to reject the null hypothesis.On average, students in the Chocolate group rated the instructor 0.20 points higher than those in the No Chocolate group is not statistically significant. So there is no evidence that giving students chocolate had an effect on the evaluation of the instructor.
+
+
+(b) Consider the variable **Overall**. Is there a treatment effect with respect to the professor's overall rating as a teacher? Apply the $t$-test to these data. Interpret the meaning of the $P$-value.
+```{r}
+t_test = t.test(Overall ~ GroupName, data = choc, var.equal = TRUE)
+t_test
+```
+The p-value = 0.1003 which is greater than α = 0.05, so the difference is not statistically significant. While students who received chocolate gave slightly higher ratings, the difference is not statistically significant at the 5% level. Thus, we fail to reject the null hypothesis. There is no strong evidence that chocolate influenced the overall evaluation of the professor.
+
+(c) Consider the test suggested in part (a). Why would a $t$-test not be a recommended statistical method to carry out the test in part (a)? Explain your answer in a few sentences. 
+A t test isn’t ideal for part (a) because Q9 is a rating scaled 1-5, which is ordinal data, not continuous. The t-test assumes normal, numeric data, so its assumptions don’t really hold. A permutation test is better here because it makes no distributional assumptions and works well with ordinal ratings.
+
+[^2]https://www.ipsos.com/sites/default/files/ct/news/documents/2021-08/Understanding%20Society%20Wave%2015%20Topline_080921.pdf
+[^3]:Fudging the Numbers: Distributing Chocolate Influences Student Evaluations in an Undergraduate Course, *Teaching of Psychology*, Volume 34, Number 7, pgs.~45 - 247, 2007.
+
+</br>
+</br>
+
